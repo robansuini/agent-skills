@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Add markdown file to any Notion database
- * Usage: add-to-database.js <database-id> <title> <md-file-path>
+ * Add markdown file as a page in a Notion database
+ * Usage: node add-to-database.js <database-id> <page-title> <markdown-file-path>
  */
 
 const fs = require('fs');
@@ -10,15 +10,8 @@ const https = require('https');
 const NOTION_API_KEY = process.env.NOTION_API_KEY;
 const NOTION_VERSION = '2025-09-03';
 
-if (!NOTION_API_KEY) {
-  console.error('Error: NOTION_API_KEY environment variable not set');
-  process.exit(1);
-}
-
-function notionRequest(path, method, data = null) {
+function notionRequest(path, method, data) {
   return new Promise((resolve, reject) => {
-    const requestData = data ? JSON.stringify(data) : null;
-    
     const options = {
       hostname: 'api.notion.com',
       port: 443,
@@ -31,10 +24,6 @@ function notionRequest(path, method, data = null) {
       }
     };
 
-    if (requestData) {
-      options.headers['Content-Length'] = Buffer.byteLength(requestData);
-    }
-
     const req = https.request(options, (res) => {
       let body = '';
       res.on('data', (chunk) => body += chunk);
@@ -42,15 +31,13 @@ function notionRequest(path, method, data = null) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(JSON.parse(body));
         } else {
-          reject(new Error(`API error (${res.statusCode}): ${body}`));
+          reject(new Error(`HTTP ${res.statusCode}: ${body}`));
         }
       });
     });
 
     req.on('error', reject);
-    if (requestData) {
-      req.write(requestData);
-    }
+    if (data) req.write(JSON.stringify(data));
     req.end();
   });
 }
@@ -128,18 +115,27 @@ function parseMarkdown(markdown) {
 }
 
 (async () => {
-  const dbId = process.argv[2];
-  const title = process.argv[3];
-  const mdPath = process.argv[4];
-  
-  if (!dbId || !title || !mdPath) {
-    console.error('Usage: add-to-database.js <database-id> <title> <md-file-path>');
+  // Parse arguments
+  const args = process.argv.slice(2);
+  if (args.length < 3) {
+    console.error('Usage: node add-to-database.js <database-id> <page-title> <markdown-file-path>');
+    console.error('\nExample:');
+    console.error('  node add-to-database.js abc123-db-id "Research Report" research.md');
     process.exit(1);
   }
   
-  console.log('Adding to database:', dbId);
-  console.log('Title:', title);
-  console.log('Source:', mdPath);
+  const [dbId, title, mdPath] = args;
+  
+  // Validate inputs
+  if (!fs.existsSync(mdPath)) {
+    console.error(`Error: File not found: ${mdPath}`);
+    process.exit(1);
+  }
+  
+  console.log('Adding page to database...');
+  console.log(`  Database: ${dbId}`);
+  console.log(`  Title: ${title}`);
+  console.log(`  Source: ${mdPath}\n`);
   
   // Create database page
   const pageData = {
@@ -154,7 +150,7 @@ function parseMarkdown(markdown) {
     }
   };
   
-  console.log('\nCreating database entry...');
+  console.log('Creating database entry...');
   const page = await notionRequest('/v1/pages', 'POST', pageData);
   console.log(`✓ Page created: ${page.id}`);
   console.log(`  URL: https://notion.so/${page.id.replace(/-/g, '')}`);
@@ -181,7 +177,7 @@ function parseMarkdown(markdown) {
   
   console.log(`\n✅ Successfully added to database!`);
   console.log(`📄 URL: https://notion.so/${page.id.replace(/-/g, '')}`);
-  console.log(`\n💡 Add Type, Tags, Status properties manually in Notion`);
+  console.log(`\n💡 Add additional properties (Type, Tags, Status, etc.) manually in Notion`);
   
 })().catch(error => {
   console.error('Error:', error.message);

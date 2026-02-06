@@ -261,18 +261,42 @@ If >2 hours since last check AND during work hours (9 AM - 9 PM):
 
 ### 7. Database Management
 
-#### Add Pages to Database
+#### Add Markdown Content to Database
+
+Add a markdown file as a new page in any Notion database.
 
 ```bash
-node scripts/add-research-to-db.js
+node scripts/add-to-database.js <database-id> "<page-title>" <markdown-file-path>
 ```
 
-**Defaults:**
-- Source: `projects/blindspots-remediation/research-insights-2026-02.md`
-- Target: Ax Resources database (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
-- Creates page with Name property + full markdown content
+**Examples:**
+```bash
+# Add research output
+node scripts/add-to-database.js \
+  xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+  "Research Report - Feb 2026" \
+  projects/research-insights.md
 
-**Customize:** Edit the script to change defaults or create variant scripts for different databases.
+# Add project notes
+node scripts/add-to-database.js \
+  <project-db-id> \
+  "Sprint Retrospective" \
+  docs/retro-2026-02.md
+
+# Add meeting notes
+node scripts/add-to-database.js \
+  <notes-db-id> \
+  "Weekly Team Sync" \
+  notes/sync-2026-02-06.md
+```
+
+**Features:**
+- Creates database page with title property
+- Converts markdown to Notion blocks (headings, paragraphs, dividers)
+- Handles large files with batched uploads
+- Returns page URL for immediate access
+
+**Note:** Additional properties (Type, Tags, Status, etc.) must be set manually in Notion UI after creation.
 
 #### Inspect Database Schema
 
@@ -387,7 +411,7 @@ Or use the 32-char format: `abc123examplepageid456def` (hyphens optional)
 - **update-page-properties.js** - Update database page properties
 
 **Database Management:**
-- **add-research-to-db.js** - Add pages to Ax Resources database
+- **add-to-database.js** - Add markdown files as database pages
 - **get-database-schema.js** - Inspect database structure
 - **delete-notion-page.js** - Archive pages
 
