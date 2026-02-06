@@ -1,10 +1,19 @@
 #!/usr/bin/env node
 /**
- * Add research report page to Ax Resources database (simple version)
+ * Add research report page to Notion database
+ * 
+ * Usage:
+ *   add-research-to-db.js <database-id> <markdown-file> [title]
+ *   
+ *   Or use environment variables:
+ *   export NOTION_DB_ID="<your-database-id>"
+ *   export NOTION_RESEARCH_FILE="<your-markdown-file>"
+ *   add-research-to-db.js
  */
 
 const fs = require('fs');
 const https = require('https');
+const path = require('path');
 
 const NOTION_API_KEY = process.env.NOTION_API_KEY;
 const NOTION_VERSION = '2025-09-03';
@@ -114,11 +123,44 @@ function parseMarkdown(markdown) {
 }
 
 (async () => {
-  const dbId = '43c69506-c4ca-420f-b295-3c522850c251';
-  const title = 'Newsletter Research: Leadership AI Coverage - Feb 2026';
-  const mdPath = 'projects/blindspots-remediation/research-insights-2026-02.md';
+  // Parse arguments
+  const args = process.argv.slice(2);
   
-  console.log('Adding research report to Ax Resources database...\n');
+  // Get values from args or environment
+  const dbId = args[0] || process.env.NOTION_DB_ID;
+  const mdPath = args[1] || process.env.NOTION_RESEARCH_FILE;
+  let title = args[2] || process.env.NOTION_RESEARCH_TITLE;
+  
+  if (!dbId || !mdPath) {
+    console.error(`Usage: add-research-to-db.js <database-id> <markdown-file> [title]
+
+Arguments:
+  database-id    Notion database ID to add page to
+  markdown-file  Path to markdown file to upload
+  title          Optional: Page title (defaults to filename)
+
+Environment variables (optional):
+  NOTION_DB_ID           Default database ID
+  NOTION_RESEARCH_FILE   Default markdown file
+  NOTION_RESEARCH_TITLE  Default page title
+
+Examples:
+  node add-research-to-db.js "abc123..." "research.md" "My Research"
+  
+  # Using environment variables
+  export NOTION_DB_ID="abc123..."
+  export NOTION_RESEARCH_FILE="research.md"
+  node add-research-to-db.js
+`);
+    process.exit(1);
+  }
+  
+  // Default title to filename if not provided
+  if (!title) {
+    title = path.basename(mdPath, '.md');
+  }
+  
+  console.log('Adding research report to Notion database...\n');
   
   // Create database page
   const pageData = {

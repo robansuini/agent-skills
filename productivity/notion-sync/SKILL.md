@@ -264,15 +264,27 @@ If >2 hours since last check AND during work hours (9 AM - 9 PM):
 #### Add Pages to Database
 
 ```bash
+node scripts/add-research-to-db.js "<database-id>" "<markdown-file>" ["title"]
+
+# Or use environment variables
+export NOTION_DB_ID="<your-database-id>"
+export NOTION_RESEARCH_FILE="/path/to/file.md"
 node scripts/add-research-to-db.js
 ```
 
-**Defaults:**
-- Source: `projects/blindspots-remediation/research-insights-2026-02.md`
-- Target: Ax Resources database (`43c69506-c4ca-420f-b295-3c522850c251`)
-- Creates page with Name property + full markdown content
+**Example:**
+```bash
+node scripts/add-research-to-db.js \
+  "abc123-database-id" \
+  "research/findings.md" \
+  "Research Findings - Feb 2026"
+```
 
-**Customize:** Edit the script to change defaults or create variant scripts for different databases.
+**Features:**
+- Creates page in specified database with Name property
+- Uploads full markdown content as blocks
+- Automatically batches large files
+- Title defaults to filename if not provided
 
 #### Inspect Database Schema
 
