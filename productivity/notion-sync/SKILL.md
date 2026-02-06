@@ -207,17 +207,29 @@ node scripts/notion-to-md.js \
 Monitor Notion pages for edits and compare with local markdown files.
 
 ```bash
+node scripts/watch-notion.js "<page-id>" "<local-markdown-path>"
+
+# Or use environment variables
+export NOTION_WATCH_PAGE_ID="<your-page-id>"
+export NOTION_WATCH_LOCAL_PATH="/path/to/your/draft.md"
 node scripts/watch-notion.js
+```
+
+**Example:**
+```bash
+node scripts/watch-notion.js \
+  "2f838506-15da-816d-9ab6-cbc7c56e8184" \
+  "projects/newsletter-draft.md"
 ```
 
 **State tracking:** Maintains state in `memory/notion-watch-state.json`:
 ```json
 {
   "pages": {
-    "2f838506-15da-816d-9ab6-cbc7c56e8184": {
+    "<page-id>": {
       "lastEditedTime": "2026-01-30T08:57:00.000Z",
       "lastChecked": "2026-01-31T19:41:54.000Z",
-      "title": "Newsletter Draft"
+      "title": "Your Page Title"
     }
   }
 }
@@ -226,11 +238,11 @@ node scripts/watch-notion.js
 **Output:**
 ```json
 {
-  "pageId": "2f838506-15da-816d-9ab6-cbc7c56e8184",
-  "title": "Newsletter Draft",
+  "pageId": "<page-id>",
+  "title": "Your Page Title",
   "lastEditedTime": "2026-01-30T08:57:00.000Z",
   "hasChanges": false,
-  "localPath": "/path/to/newsletter-draft.md",
+  "localPath": "/path/to/your-draft.md",
   "actions": ["✓ No changes since last check"]
 }
 ```
@@ -242,7 +254,7 @@ node scripts/watch-notion.js
 Check if enough time has passed since last Notion check.
 
 If >2 hours since last check AND during work hours (9 AM - 9 PM):
-1. Run: `node scripts/watch-notion.js`
+1. Run: `node scripts/watch-notion.js "<your-page-id>" "<your-local-path>"`
 2. If `hasChanges: true` → notify user via message tool
 3. Update check timestamp
 ```
