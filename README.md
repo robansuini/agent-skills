@@ -2,9 +2,13 @@
 
 A collection of skills for AI agents following the [Agent Skills](https://agentskills.io/) format. Skills are packaged instructions and scripts that extend agent capabilities across compatible platforms (Claude Code, OpenClaw, Windsurf, etc.).
 
+Skills are organized by category for easy discovery.
+
 ## Available Skills
 
-### notion-sync
+### Productivity
+
+#### notion-sync
 
 Bi-directional sync and management for Notion pages and databases. Enables collaborative editing, research tracking, and project management through seamless markdown ↔ Notion integration.
 
@@ -83,7 +87,21 @@ Skills are automatically available once installed. Agents will use them when rel
 "Update the status to Complete in the research database"
 ```
 
-## Skill Structure
+## Repository Structure
+
+Skills are organized by category:
+
+```
+agent-skills/
+├── productivity/
+│   └── notion-sync/
+│       ├── SKILL.md
+│       ├── scripts/
+│       └── references/
+├── development/     (coming soon)
+├── communication/   (coming soon)
+└── research/        (coming soon)
+```
 
 Each skill follows the agentskills.io format:
 
