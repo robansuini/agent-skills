@@ -9,17 +9,31 @@ const https = require('https');
 const NOTION_API_KEY = process.env.NOTION_API_KEY;
 const NOTION_VERSION = '2025-09-03';
 
-if (!NOTION_API_KEY) {
+// Only check API key when running as main script (not when imported as module)
+if (require.main === module && !NOTION_API_KEY) {
   console.error('Error: NOTION_API_KEY environment variable not set');
   process.exit(1);
+}
+
+// Normalize and encode page/block IDs for URL safety
+function normalizeId(id) {
+  // Remove hyphens if present, then add them back in UUID format
+  const clean = id.replace(/-/g, '');
+  if (clean.length === 32) {
+    return `${clean.slice(0,8)}-${clean.slice(8,12)}-${clean.slice(12,16)}-${clean.slice(16,20)}-${clean.slice(20)}`;
+  }
+  return id; // Return as-is if not standard length
 }
 
 // Fetch page metadata
 function getPage(pageId) {
   return new Promise((resolve, reject) => {
+    const normalizedId = normalizeId(pageId);
+    const encodedId = encodeURIComponent(normalizedId);
+    
     const options = {
       hostname: 'api.notion.com',
-      path: `/v1/pages/${pageId}`,
+      path: `/v1/pages/${encodedId}`,
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${NOTION_API_KEY}`,
@@ -47,7 +61,10 @@ function getPage(pageId) {
 // Fetch blocks from a page
 function getBlocks(blockId, cursor = null) {
   return new Promise((resolve, reject) => {
-    const path = `/v1/blocks/${blockId}/children${cursor ? `?start_cursor=${cursor}` : ''}`;
+    const normalizedId = normalizeId(blockId);
+    const encodedId = encodeURIComponent(normalizedId);
+    const encodedCursor = cursor ? encodeURIComponent(cursor) : null;
+    const path = `/v1/blocks/${encodedId}/children${encodedCursor ? `?start_cursor=${encodedCursor}` : ''}`;
     
     const options = {
       hostname: 'api.notion.com',
@@ -204,7 +221,7 @@ async function main() {
     process.exit(1);
   }
 
-  const pageId = args[0];
+  const pageId = normalizeId(args[0]);
   const outputFile = args[1] || null;
 
   try {
@@ -246,5 +263,5 @@ async function main() {
 if (require.main === module) {
   main();
 } else {
-  module.exports = { getPage, getAllBlocks, blocksToMarkdown };
+  module.exports = { getPage, getAllBlocks, blocksToMarkdown, normalizeId };
 }

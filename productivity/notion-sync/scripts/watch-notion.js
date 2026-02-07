@@ -6,7 +6,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { getPage, getAllBlocks, blocksToMarkdown } = require('./notion-to-md.js');
+const { getPage, getAllBlocks, blocksToMarkdown, normalizeId } = require('./notion-to-md.js');
 
 const STATE_FILE = path.join(__dirname, '../memory/notion-watch-state.json');
 
@@ -30,11 +30,14 @@ function saveState(state) {
 // Check a specific page for changes
 async function checkPage(pageId, localPath) {
   try {
+    // Normalize pageId to handle different formats
+    const normalizedPageId = normalizeId(pageId);
+    
     const state = loadState();
-    const pageState = state.pages[pageId] || {};
+    const pageState = state.pages[normalizedPageId] || {};
     
     // Fetch current page state
-    const page = await getPage(pageId);
+    const page = await getPage(normalizedPageId);
     const lastEditedTime = page.last_edited_time;
     const title = page.properties?.title?.title?.[0]?.plain_text || 'Untitled';
     
@@ -43,7 +46,7 @@ async function checkPage(pageId, localPath) {
                       new Date(lastEditedTime) > new Date(pageState.lastEditedTime);
     
     const result = {
-      pageId,
+      pageId: normalizedPageId,
       title,
       lastEditedTime,
       hasChanges,
@@ -53,7 +56,7 @@ async function checkPage(pageId, localPath) {
     
     if (hasChanges) {
       // Fetch blocks and convert to markdown
-      const blocks = await getAllBlocks(pageId);
+      const blocks = await getAllBlocks(normalizedPageId);
       const notionMarkdown = blocksToMarkdown(blocks);
       
       // Compare with local file if it exists
@@ -86,7 +89,7 @@ async function checkPage(pageId, localPath) {
       pageState.lastEditedTime = lastEditedTime;
       pageState.lastChecked = new Date().toISOString();
       pageState.title = title;
-      state.pages[pageId] = pageState;
+      state.pages[normalizedPageId] = pageState;
       saveState(state);
       
     } else {
@@ -97,7 +100,7 @@ async function checkPage(pageId, localPath) {
     
   } catch (error) {
     return {
-      pageId,
+      pageId: normalizeId(pageId),
       error: error.message,
       actions: [`❌ Error checking page: ${error.message}`]
     };
