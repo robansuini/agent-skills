@@ -7,18 +7,10 @@ Detailed technical reference for all Notion sync scripts and utilities.
 ### Required Environment Variable
 
 ```bash
-export NOTION_API_KEY="secret_..."
+export NOTION_API_KEY="ntn_your_token_here"
 ```
 
-### Keychain Storage (macOS)
-
-```bash
-# Store in keychain
-security add-generic-password -a "$USER" -s "openclaw.notion_api_key" -w
-
-# Load from keychain
-export NOTION_API_KEY="$(security find-generic-password -a "$USER" -s "openclaw.notion_api_key" -w)"
-```
+All scripts read this variable at runtime.
 
 ## Scripts Reference
 
@@ -182,23 +174,23 @@ Makes authenticated API requests to Notion.
 
 **Error Handling:** Throws with detailed Notion API error messages
 
-#### `formatProperty(type, value)`
-Formats property values for Notion API.
+#### `formatPropertyValue(type, value)`
+Formats property values for Notion API write operations.
 
 **Supported Types:**
-- select, multi_select, checkbox, number, url, email, date, rich_text
+- select, multi_select, checkbox, number, url, email, date, rich_text, title
 
 **Returns:** Notion API property object
 
-#### `extractPageId(input)`
-Extracts clean page ID from URL or ID string.
+#### `normalizeId(id)`
+Normalizes a Notion page/block ID to UUID format with hyphens.
 
 **Input Formats:**
-- URL: `https://notion.so/Title-abc123...`
-- With hyphens: `abc123-example-page-id-456def`
-- Without hyphens: `abc123examplepageid456def`
+- With hyphens: `abc12345-6789-0123-4567-890abcdef012` (passes through)
+- Without hyphens: `abc12345678901234567890abcdef012` (adds hyphens)
+- Invalid length: returned as-is
 
-**Returns:** 32-char UUID with hyphens
+**Returns:** UUID string with hyphens
 
 ## Rate Limits
 

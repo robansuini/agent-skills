@@ -1,35 +1,28 @@
 ---
 name: notion-sync
 description: Bi-directional sync and management for Notion pages and databases. Use when working with Notion workspaces for collaborative editing, research tracking, project management, or when you need to sync markdown files to/from Notion pages or monitor Notion pages for changes.
+env:
+  - NOTION_API_KEY
 ---
 
 # Notion Sync
 
 Bi-directional sync between markdown files and Notion pages, plus database management utilities for research tracking and project management.
 
+## Requirements
+
+- **Node.js** v18 or later
+- **`NOTION_API_KEY`** environment variable set with your integration token
+
 ## Setup
 
-### API Key Configuration
-
-Store the Notion API key in macOS Keychain:
-
-```bash
-# Add to keychain (will prompt for the secret)
-security add-generic-password -a "$USER" -s "openclaw.notion_api_key" -w
-
-# Add to environment loader (e.g., ~/.openclaw/bin/openclaw-env.sh)
-export NOTION_API_KEY="$(security find-generic-password -a "$USER" -s "openclaw.notion_api_key" -w)"
-
-# Restart gateway to load the key
-openclaw gateway restart
-```
-
-### Integration Setup
-
 1. Go to https://www.notion.so/my-integrations
-2. Create a new integration or use an existing one
-3. Copy the "Internal Integration Token" (starts with `secret_`)
-4. Store it in Keychain as shown above
+2. Create a new integration (or use an existing one)
+3. Copy the "Internal Integration Token" (starts with `ntn_` or `secret_`)
+4. Make it available as an environment variable:
+   ```bash
+   export NOTION_API_KEY="ntn_your_token_here"
+   ```
 5. Share your Notion pages/databases with the integration:
    - Open the page/database in Notion
    - Click "Share" → "Invite"
@@ -247,17 +240,13 @@ node scripts/watch-notion.js \
 }
 ```
 
-**Integration with heartbeat:** Add to `HEARTBEAT.md` for automated monitoring:
-```markdown
-## Notion Page Monitoring (Every 2-3 hours during work hours)
-
-Check if enough time has passed since last Notion check.
-
-If >2 hours since last check AND during work hours (9 AM - 9 PM):
-1. Run: `node scripts/watch-notion.js "<your-page-id>" "<your-local-path>"`
-2. If `hasChanges: true` → notify user via message tool
-3. Update check timestamp
+**Automated monitoring:** Schedule periodic checks using cron, CI pipelines, or any task scheduler:
+```bash
+# Example: cron job every 2 hours during work hours
+0 9-21/2 * * * cd /path/to/workspace && node scripts/watch-notion.js "<page-id>" "<local-path>"
 ```
+
+The script outputs JSON — pipe it to any notification system when `hasChanges` is `true`.
 
 ### 7. Database Management
 
@@ -390,7 +379,7 @@ Or use the 32-char format: `abc123examplepageid456def` (hyphens optional)
 
 **"Module not found" error:**
 - Scripts use built-in Node.js https module (no npm install needed)
-- Ensure running from correct directory with `cd ~/clawd`
+- Ensure running from the skill's directory (where scripts/ lives)
 
 **Rate limiting:**
 - Notion API has rate limits (~3 requests/second)

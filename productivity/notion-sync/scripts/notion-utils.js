@@ -5,23 +5,49 @@
 
 const https = require('https');
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY;
 const NOTION_VERSION = '2025-09-03';
+
+/**
+ * Get the Notion API key from environment
+ */
+function getApiKey() {
+  return process.env.NOTION_API_KEY;
+}
+
+/**
+ * Check if NOTION_API_KEY is set, exit with helpful message if not
+ */
+function checkApiKey() {
+  if (!getApiKey()) {
+    console.error('Error: NOTION_API_KEY environment variable not set');
+    console.error('');
+    console.error('Setup:');
+    console.error('  1. Create an integration at https://www.notion.so/my-integrations');
+    console.error('  2. Set the environment variable:');
+    console.error('     export NOTION_API_KEY="ntn_your_token_here"');
+    process.exit(1);
+  }
+}
 
 /**
  * Make a Notion API request with proper error handling
  */
 function notionRequest(path, method, data = null) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    return Promise.reject(new Error('NOTION_API_KEY environment variable not set'));
+  }
+
   return new Promise((resolve, reject) => {
     const requestData = data ? JSON.stringify(data) : null;
-    
+
     const options = {
       hostname: 'api.notion.com',
       port: 443,
       path: path,
       method: method,
       headers: {
-        'Authorization': `Bearer ${NOTION_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Notion-Version': NOTION_VERSION,
         'Content-Type': 'application/json'
       }
@@ -36,7 +62,11 @@ function notionRequest(path, method, data = null) {
       res.on('data', (chunk) => body += chunk);
       res.on('end', () => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(JSON.parse(body));
+          try {
+            resolve(JSON.parse(body));
+          } catch (e) {
+            resolve(body);
+          }
         } else {
           reject(createDetailedError(res.statusCode, body));
         }
@@ -71,27 +101,42 @@ function createDetailedError(statusCode, body) {
         return new Error(`Validation error: ${errorMessage}. Check your input data.`);
       }
       return new Error(`Bad request: ${errorMessage}`);
-    
+
     case 401:
       return new Error('Authentication failed. Check your NOTION_API_KEY environment variable.');
-    
+
     case 404:
       if (errorCode === 'object_not_found') {
         return new Error('Page/database not found. Make sure it is shared with your integration.');
       }
       return new Error(`Not found: ${errorMessage}`);
-    
+
     case 429:
       return new Error('Rate limit exceeded. Wait a moment and try again.');
-    
+
     case 500:
     case 503:
       return new Error(`Notion server error (${statusCode}). Try again later.`);
-    
+
     default:
       return new Error(`API error (${statusCode}): ${errorMessage || body}`);
   }
 }
+
+// --- ID Utilities ---
+
+/**
+ * Normalize a Notion page/block ID to UUID format with hyphens
+ */
+function normalizeId(id) {
+  const clean = id.replace(/-/g, '');
+  if (clean.length === 32) {
+    return `${clean.slice(0, 8)}-${clean.slice(8, 12)}-${clean.slice(12, 16)}-${clean.slice(16, 20)}-${clean.slice(20)}`;
+  }
+  return id;
+}
+
+// --- Property Utilities ---
 
 /**
  * Extract title from a page or database object
@@ -100,11 +145,11 @@ function extractTitle(item) {
   if (item.object === 'page') {
     const titleProp = Object.values(item.properties || {}).find(p => p.type === 'title');
     if (titleProp && titleProp.title && titleProp.title.length > 0) {
-      return titleProp.title[0].plain_text;
+      return titleProp.title.map(t => t.plain_text).join('');
     }
   } else if (item.object === 'database' || item.object === 'data_source') {
     if (item.title && item.title.length > 0) {
-      return item.title[0].plain_text;
+      return item.title.map(t => t.plain_text).join('');
     }
   }
   return '(Untitled)';
@@ -126,10 +171,7 @@ function extractPropertyValue(property) {
     case 'multi_select':
       return property.multi_select.map(s => s.name);
     case 'date':
-      return property.date ? {
-        start: property.date.start,
-        end: property.date.end
-      } : null;
+      return property.date ? { start: property.date.start, end: property.date.end } : null;
     case 'checkbox':
       return property.checkbox;
     case 'url':
@@ -150,109 +192,368 @@ function extractPropertyValue(property) {
 }
 
 /**
- * Parse rich text with basic markdown formatting
- */
-function parseRichText(text) {
-  const richText = [];
-  const maxLength = 2000;
-  
-  // Split text into chunks if needed
-  if (text.length <= maxLength) {
-    richText.push({
-      type: 'text',
-      text: { content: text }
-    });
-  } else {
-    // Split into chunks
-    for (let i = 0; i < text.length; i += maxLength) {
-      richText.push({
-        type: 'text',
-        text: { content: text.substring(i, i + maxLength) }
-      });
-    }
-  }
-  
-  return richText;
-}
-
-/**
- * Check if NOTION_API_KEY is set
- */
-function checkApiKey() {
-  if (!NOTION_API_KEY) {
-    console.error('Error: NOTION_API_KEY environment variable not set');
-    console.error('');
-    console.error('Setup:');
-    console.error('  1. Create a Notion integration at https://www.notion.so/my-integrations');
-    console.error('  2. Store the API key in macOS Keychain');
-    console.error('  3. Add to environment loader (e.g., ~/.openclaw/bin/openclaw-env.sh):');
-    console.error('     export NOTION_API_KEY="$(security find-generic-password -a "$USER" -s "openclaw.notion_api_key" -w)"');
-    console.error('  4. Restart gateway: openclaw gateway restart');
-    process.exit(1);
-  }
-}
-
-/**
- * Format property value for database operations
+ * Format property value for Notion API write operations
  */
 function formatPropertyValue(propertyType, value) {
   switch (propertyType) {
     case 'select':
       return { select: { name: value } };
-    
-    case 'multi_select':
+
+    case 'multi_select': {
       const tags = Array.isArray(value) ? value : value.split(',').map(t => t.trim());
       return { multi_select: tags.map(name => ({ name })) };
-    
-    case 'checkbox':
-      const boolValue = typeof value === 'boolean' ? value : 
-                       (value.toLowerCase() === 'true' || value === '1');
+    }
+
+    case 'checkbox': {
+      const boolValue = typeof value === 'boolean' ? value :
+        (String(value).toLowerCase() === 'true' || value === '1');
       return { checkbox: boolValue };
-    
+    }
+
     case 'number':
       return { number: typeof value === 'number' ? value : parseFloat(value) };
-    
+
     case 'url':
       return { url: value };
-    
+
     case 'email':
       return { email: value };
-    
-    case 'date':
+
+    case 'date': {
       if (typeof value === 'string') {
         const dates = value.split(',').map(d => d.trim());
-        return {
-          date: {
-            start: dates[0],
-            end: dates[1] || null
-          }
-        };
+        return { date: { start: dates[0], end: dates[1] || null } };
       }
       return { date: value };
-    
+    }
+
     case 'rich_text':
-      return {
-        rich_text: [{ type: 'text', text: { content: value } }]
-      };
-    
+      return { rich_text: [{ type: 'text', text: { content: value } }] };
+
     case 'title':
-      return {
-        title: [{ type: 'text', text: { content: value } }]
-      };
-    
+      return { title: [{ type: 'text', text: { content: value } }] };
+
     default:
-      throw new Error(`Unsupported property type: ${propertyType}`);
+      throw new Error(`Unsupported property type: ${propertyType}. Supported: select, multi_select, checkbox, number, url, email, date, rich_text, title`);
+  }
+}
+
+// --- Rich Text Utilities ---
+
+/**
+ * Parse plain text into Notion rich_text array, handling the 2000-char limit
+ */
+function parseRichText(text) {
+  const maxLength = 2000;
+  const richText = [];
+
+  for (let i = 0; i < text.length; i += maxLength) {
+    richText.push({
+      type: 'text',
+      text: { content: text.substring(i, i + maxLength) }
+    });
+  }
+
+  return richText.length > 0 ? richText : [{ type: 'text', text: { content: '' } }];
+}
+
+/**
+ * Parse markdown-formatted text into Notion rich_text with annotations
+ */
+function parseMarkdownRichText(text) {
+  const richText = [];
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|\[.*?\]\(.*?\))/);
+
+  for (const part of parts) {
+    if (!part) continue;
+
+    if (part.startsWith('**') && part.endsWith('**')) {
+      richText.push({
+        type: 'text',
+        text: { content: part.slice(2, -2) },
+        annotations: { bold: true }
+      });
+    } else if (part.startsWith('*') && part.endsWith('*') && !part.startsWith('**')) {
+      richText.push({
+        type: 'text',
+        text: { content: part.slice(1, -1) },
+        annotations: { italic: true }
+      });
+    } else {
+      const linkMatch = part.match(/\[(.*?)\]\((.*?)\)/);
+      if (linkMatch) {
+        richText.push({
+          type: 'text',
+          text: { content: linkMatch[1], link: { url: linkMatch[2] } }
+        });
+      } else {
+        richText.push({
+          type: 'text',
+          text: { content: part }
+        });
+      }
+    }
+  }
+
+  return richText.length > 0 ? richText : [{ type: 'text', text: { content: text } }];
+}
+
+// --- Markdown Parsing ---
+
+/**
+ * Parse markdown string into Notion block array
+ * @param {string} markdown - Markdown content
+ * @param {object} options - { richText: 'plain' | 'markdown' }
+ */
+function parseMarkdownToBlocks(markdown, options = {}) {
+  const useMarkdownRichText = options.richText === 'markdown';
+  const toRichText = useMarkdownRichText ? parseMarkdownRichText : parseRichText;
+
+  const lines = markdown.split('\n');
+  const blocks = [];
+  let currentParagraph = [];
+  let inCodeBlock = false;
+  let codeLanguage = '';
+  let codeContent = [];
+
+  const flushParagraph = () => {
+    if (currentParagraph.length > 0) {
+      const text = currentParagraph.join('\n').trim();
+      if (text) {
+        blocks.push({
+          type: 'paragraph',
+          paragraph: { rich_text: toRichText(text) }
+        });
+      }
+      currentParagraph = [];
+    }
+  };
+
+  for (const line of lines) {
+    // Code blocks
+    if (line.startsWith('```')) {
+      if (!inCodeBlock) {
+        flushParagraph();
+        inCodeBlock = true;
+        codeLanguage = line.slice(3).trim() || 'plain text';
+        codeContent = [];
+      } else {
+        blocks.push({
+          type: 'code',
+          code: {
+            language: codeLanguage,
+            rich_text: [{ type: 'text', text: { content: codeContent.join('\n') } }]
+          }
+        });
+        inCodeBlock = false;
+        codeLanguage = '';
+        codeContent = [];
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeContent.push(line);
+      continue;
+    }
+
+    // Headings (check ### before ## before #)
+    const headingMatch = line.match(/^(#{1,3})\s+(.*)/);
+    if (headingMatch) {
+      flushParagraph();
+      const level = headingMatch[1].length;
+      const text = headingMatch[2].trim();
+      const type = `heading_${level}`;
+      blocks.push({ type, [type]: { rich_text: toRichText(text) } });
+      continue;
+    }
+
+    // Horizontal rules
+    if (/^---+$/.test(line)) {
+      flushParagraph();
+      blocks.push({ type: 'divider', divider: {} });
+      continue;
+    }
+
+    // Bullet lists
+    if (/^[-*]\s+/.test(line)) {
+      flushParagraph();
+      const text = line.replace(/^[-*]\s+/, '').trim();
+      blocks.push({
+        type: 'bulleted_list_item',
+        bulleted_list_item: { rich_text: toRichText(text) }
+      });
+      continue;
+    }
+
+    // Empty lines
+    if (line.trim() === '') {
+      flushParagraph();
+      continue;
+    }
+
+    currentParagraph.push(line);
+  }
+
+  flushParagraph();
+  return blocks;
+}
+
+// --- Block to Markdown ---
+
+/**
+ * Extract plain text from rich_text array
+ */
+function richTextToPlain(richText) {
+  if (!richText || richText.length === 0) return '';
+  return richText.map(rt => rt.plain_text || '').join('');
+}
+
+/**
+ * Extract markdown-formatted text from rich_text array
+ */
+function richTextToMarkdown(richText) {
+  if (!richText || richText.length === 0) return '';
+
+  return richText.map(rt => {
+    let text = rt.plain_text || '';
+    const ann = rt.annotations || {};
+
+    if (ann.code) text = `\`${text}\``;
+    if (ann.bold) text = `**${text}**`;
+    if (ann.italic) text = `*${text}*`;
+    if (ann.strikethrough) text = `~~${text}~~`;
+
+    if (rt.href) {
+      text = `[${text}](${rt.href})`;
+    } else if (rt.text && rt.text.link) {
+      text = `[${text}](${rt.text.link.url})`;
+    }
+
+    return text;
+  }).join('');
+}
+
+/**
+ * Convert Notion blocks to markdown string
+ */
+function blocksToMarkdown(blocks) {
+  const lines = [];
+
+  for (const block of blocks) {
+    const type = block.type;
+    const content = block[type];
+
+    switch (type) {
+      case 'heading_1':
+        lines.push(`# ${richTextToMarkdown(content.rich_text)}`, '');
+        break;
+      case 'heading_2':
+        lines.push(`## ${richTextToMarkdown(content.rich_text)}`, '');
+        break;
+      case 'heading_3':
+        lines.push(`### ${richTextToMarkdown(content.rich_text)}`, '');
+        break;
+      case 'paragraph': {
+        const text = richTextToMarkdown(content.rich_text);
+        if (text.trim()) lines.push(text, '');
+        break;
+      }
+      case 'bulleted_list_item':
+        lines.push(`- ${richTextToMarkdown(content.rich_text)}`);
+        break;
+      case 'numbered_list_item':
+        lines.push(`1. ${richTextToMarkdown(content.rich_text)}`);
+        break;
+      case 'code': {
+        const code = richTextToPlain(content.rich_text);
+        const lang = content.language || 'plain text';
+        lines.push(`\`\`\`${lang}`, code, '```', '');
+        break;
+      }
+      case 'divider':
+        lines.push('---', '');
+        break;
+      case 'quote':
+        lines.push(`> ${richTextToMarkdown(content.rich_text)}`, '');
+        break;
+      case 'callout': {
+        const emoji = content.icon?.emoji || '📌';
+        lines.push(`${emoji} ${richTextToMarkdown(content.rich_text)}`, '');
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  return lines.join('\n');
+}
+
+// --- Notion Page Helpers ---
+
+/**
+ * Fetch all blocks from a page/block, handling pagination
+ */
+async function getAllBlocks(blockId) {
+  const normalizedId = normalizeId(blockId);
+  let allBlocks = [];
+  let cursor = null;
+
+  do {
+    const encodedId = encodeURIComponent(normalizedId);
+    const path = `/v1/blocks/${encodedId}/children${cursor ? `?start_cursor=${encodeURIComponent(cursor)}` : ''}`;
+    const response = await notionRequest(path, 'GET');
+    allBlocks = allBlocks.concat(response.results);
+    cursor = response.has_more ? response.next_cursor : null;
+  } while (cursor);
+
+  return allBlocks;
+}
+
+/**
+ * Append blocks to a page in batches with rate limiting
+ */
+async function appendBlocksBatched(pageId, blocks, batchSize = 100, delayMs = 350) {
+  for (let i = 0; i < blocks.length; i += batchSize) {
+    const batch = blocks.slice(i, i + batchSize);
+    await notionRequest(`/v1/blocks/${pageId}/children`, 'PATCH', { children: batch });
+
+    if (i + batchSize < blocks.length) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
   }
 }
 
 module.exports = {
+  // Config
+  NOTION_VERSION,
+  getApiKey,
+  checkApiKey,
+
+  // HTTP
   notionRequest,
   createDetailedError,
+
+  // IDs
+  normalizeId,
+
+  // Properties
   extractTitle,
   extractPropertyValue,
-  parseRichText,
-  checkApiKey,
   formatPropertyValue,
-  NOTION_API_KEY,
-  NOTION_VERSION
+
+  // Rich text
+  parseRichText,
+  parseMarkdownRichText,
+  richTextToPlain,
+  richTextToMarkdown,
+
+  // Markdown conversion
+  parseMarkdownToBlocks,
+  blocksToMarkdown,
+
+  // Page helpers
+  getAllBlocks,
+  appendBlocksBatched,
 };
