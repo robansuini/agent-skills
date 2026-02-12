@@ -21,15 +21,12 @@ function checkApiKey() {
   if (!getApiKey()) {
     console.error('Error: NOTION_API_KEY environment variable not set');
     console.error('');
-    console.error('Setup options:');
-    console.error('  1. Set environment variable:');
+    console.error('Setup:');
+    console.error('  1. Create integration at https://www.notion.so/my-integrations');
+    console.error('  2. Set the environment variable:');
     console.error('     export NOTION_API_KEY="ntn_your_key_here"');
     console.error('');
-    console.error('  2. macOS Keychain (optional):');
-    console.error('     security add-generic-password -a "$USER" -s "openclaw.notion_api_key" -w');
-    console.error('     export NOTION_API_KEY="$(security find-generic-password -a "$USER" -s "openclaw.notion_api_key" -w)"');
-    console.error('');
-    console.error('  3. Create integration at https://www.notion.so/my-integrations');
+    console.error('  See SKILL.md for secure storage options (secret managers, keychains, etc.).');
     process.exit(1);
   }
 }
