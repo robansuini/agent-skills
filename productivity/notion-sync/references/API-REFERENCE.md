@@ -7,10 +7,10 @@ Detailed technical reference for all Notion sync scripts and utilities.
 ### Required Environment Variable
 
 ```bash
-export NOTION_API_KEY="ntn_your_key_here"
+export NOTION_API_KEY="ntn_your_token_here"
 ```
 
-All scripts read this variable at runtime. See SKILL.md for platform-specific storage options (macOS Keychain, OpenClaw gateway, etc.).
+All scripts read this variable at runtime.
 
 ## Scripts Reference
 

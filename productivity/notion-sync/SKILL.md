@@ -9,36 +9,20 @@ env:
 
 Bi-directional sync between markdown files and Notion pages, plus database management utilities for research tracking and project management.
 
+## Requirements
+
+- **Node.js** v18 or later
+- **`NOTION_API_KEY`** environment variable set with your integration token
+
 ## Setup
 
-### API Key Configuration
-
-All scripts read the API key from the `NOTION_API_KEY` environment variable.
-
-**Option 1 — Environment variable (all platforms):**
-```bash
-# Add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
-export NOTION_API_KEY="ntn_your_key_here"
-```
-
-**Option 2 — macOS Keychain (recommended on macOS):**
-```bash
-# Store securely in Keychain
-security add-generic-password -a "$USER" -s "openclaw.notion_api_key" -w
-
-# Add to your environment loader
-export NOTION_API_KEY="$(security find-generic-password -a "$USER" -s "openclaw.notion_api_key" -w)"
-```
-
-**Option 3 — OpenClaw gateway environment:**
-If running under OpenClaw, add `NOTION_API_KEY` to your gateway's environment configuration and restart the gateway to pick it up.
-
-### Integration Setup
-
 1. Go to https://www.notion.so/my-integrations
-2. Create a new integration or use an existing one
+2. Create a new integration (or use an existing one)
 3. Copy the "Internal Integration Token" (starts with `ntn_` or `secret_`)
-4. Store it using one of the options above
+4. Make it available as an environment variable:
+   ```bash
+   export NOTION_API_KEY="ntn_your_token_here"
+   ```
 5. Share your Notion pages/databases with the integration:
    - Open the page/database in Notion
    - Click "Share" → "Invite"
@@ -256,17 +240,13 @@ node scripts/watch-notion.js \
 }
 ```
 
-**Integration with heartbeat:** Add to `HEARTBEAT.md` for automated monitoring:
-```markdown
-## Notion Page Monitoring (Every 2-3 hours during work hours)
-
-Check if enough time has passed since last Notion check.
-
-If >2 hours since last check AND during work hours (9 AM - 9 PM):
-1. Run: `node scripts/watch-notion.js "<your-page-id>" "<your-local-path>"`
-2. If `hasChanges: true` → notify user via message tool
-3. Update check timestamp
+**Automated monitoring:** Schedule periodic checks using cron, CI pipelines, or any task scheduler:
+```bash
+# Example: cron job every 2 hours during work hours
+0 9-21/2 * * * cd /path/to/workspace && node scripts/watch-notion.js "<page-id>" "<local-path>"
 ```
+
+The script outputs JSON — pipe it to any notification system when `hasChanges` is `true`.
 
 ### 7. Database Management
 

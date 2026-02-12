@@ -22,11 +22,9 @@ function checkApiKey() {
     console.error('Error: NOTION_API_KEY environment variable not set');
     console.error('');
     console.error('Setup:');
-    console.error('  1. Create integration at https://www.notion.so/my-integrations');
+    console.error('  1. Create an integration at https://www.notion.so/my-integrations');
     console.error('  2. Set the environment variable:');
-    console.error('     export NOTION_API_KEY="ntn_your_key_here"');
-    console.error('');
-    console.error('  See SKILL.md for secure storage options (secret managers, keychains, etc.).');
+    console.error('     export NOTION_API_KEY="ntn_your_token_here"');
     process.exit(1);
   }
 }
