@@ -513,15 +513,15 @@ console.log('\n📋 createDetailedError');
 console.log('\n📋 stripTokenArg');
 
 assertEqual(
-  stripTokenArg(['--token', 'ntn_abc', 'query']),
+  stripTokenArg(['--token-file', '/path/to/token', 'query']),
   ['query'],
-  'Strips --token and its value'
+  'Strips --token-file and its value'
 );
 
 assertEqual(
   stripTokenArg(['query', '--limit', '5']),
   ['query', '--limit', '5'],
-  'No --token: passes through unchanged'
+  'No token flags: passes through unchanged'
 );
 
 assertEqual(
@@ -531,33 +531,15 @@ assertEqual(
 );
 
 assertEqual(
-  stripTokenArg(['--filter', 'page', '--token', 'ntn_abc', '--limit', '5']),
+  stripTokenArg(['--filter', 'page', '--token-file', '~/.notion-token', '--limit', '5']),
   ['--filter', 'page', '--limit', '5'],
-  'Strips --token from middle of args'
-);
-
-assertEqual(
-  stripTokenArg(['--token']),
-  ['--token'],
-  '--token without value: kept as-is'
-);
-
-assertEqual(
-  stripTokenArg(['--token-file', '/path/to/token', 'query']),
-  ['query'],
-  'Strips --token-file and its value'
+  'Strips --token-file from middle of args'
 );
 
 assertEqual(
   stripTokenArg(['--token-stdin', 'query', '--limit', '5']),
   ['query', '--limit', '5'],
   'Strips --token-stdin flag (no value)'
-);
-
-assertEqual(
-  stripTokenArg(['--filter', 'page', '--token-file', '~/.notion-token', '--limit', '5']),
-  ['--filter', 'page', '--limit', '5'],
-  'Strips --token-file from middle of args'
 );
 
 assertEqual(
