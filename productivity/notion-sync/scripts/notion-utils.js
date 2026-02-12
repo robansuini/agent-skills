@@ -4,27 +4,72 @@
  */
 
 const https = require('https');
+const fs = require('fs');
 
 const NOTION_VERSION = '2025-09-03';
 
+// Cached token (resolved once per process)
+let _cachedToken = undefined;
+
 /**
- * Parse --token <value> from process.argv
+ * Resolve the Notion API token from multiple sources (in priority order):
+ *
+ * 1. --token <value>        Direct argument (convenient but visible in ps/history)
+ * 2. --token-file <path>    Read from a file (recommended for automation)
+ * 3. --token-stdin           Read from stdin (recommended for pipes)
+ * 4. NOTION_API_KEY env var  Environment variable fallback
+ *
+ * Security note: --token-file or piping via stdin are preferred over bare
+ * --token to avoid credentials appearing in process listings or shell history.
  */
-function parseTokenArg() {
+function resolveToken() {
+  if (_cachedToken !== undefined) return _cachedToken;
+
   const args = process.argv;
+
   for (let i = 2; i < args.length; i++) {
+    // --token <value> (direct, least secure)
     if (args[i] === '--token' && args[i + 1]) {
-      return args[i + 1];
+      _cachedToken = args[i + 1];
+      return _cachedToken;
+    }
+    // --token-file <path>
+    if (args[i] === '--token-file' && args[i + 1]) {
+      try {
+        _cachedToken = fs.readFileSync(args[i + 1], 'utf8').trim();
+        return _cachedToken;
+      } catch (err) {
+        console.error(`Error reading token file "${args[i + 1]}": ${err.message}`);
+        process.exit(1);
+      }
+    }
+    // --token-stdin
+    if (args[i] === '--token-stdin') {
+      try {
+        _cachedToken = fs.readFileSync(0, 'utf8').trim(); // fd 0 = stdin
+        return _cachedToken;
+      } catch (err) {
+        console.error(`Error reading token from stdin: ${err.message}`);
+        process.exit(1);
+      }
     }
   }
+
+  // Env var fallback
+  if (process.env.NOTION_API_KEY) {
+    _cachedToken = process.env.NOTION_API_KEY;
+    return _cachedToken;
+  }
+
+  _cachedToken = null;
   return null;
 }
 
 /**
- * Get the Notion API key from --token argument
+ * Get the Notion API key (resolves from all supported sources)
  */
 function getApiKey() {
-  return parseTokenArg();
+  return resolveToken();
 }
 
 /**
@@ -34,22 +79,28 @@ function checkApiKey() {
   if (!getApiKey()) {
     console.error('Error: No Notion API token provided');
     console.error('');
-    console.error('Usage:');
-    console.error('  node scripts/<script>.js --token "ntn_your_token_here" [args]');
+    console.error('Usage (pick one):');
+    console.error('  node scripts/<script>.js --token-file ~/.notion-token [args]');
+    console.error('  echo "$NOTION_API_KEY" | node scripts/<script>.js --token-stdin [args]');
+    console.error('  NOTION_API_KEY=ntn_... node scripts/<script>.js [args]');
+    console.error('  node scripts/<script>.js --token "ntn_..." [args]');
     console.error('');
+    console.error('Recommended: --token-file or --token-stdin (avoids credentials in process list)');
     console.error('Create an integration at https://www.notion.so/my-integrations');
     process.exit(1);
   }
 }
 
 /**
- * Strip --token <value> from an args array so scripts don't parse it as their own args
+ * Strip token-related flags from an args array so scripts don't parse them as their own args
  */
 function stripTokenArg(args) {
   const result = [];
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--token' && i + 1 < args.length) {
+    if ((args[i] === '--token' || args[i] === '--token-file') && i + 1 < args.length) {
       i++; // skip value
+    } else if (args[i] === '--token-stdin') {
+      // skip flag only (no value)
     } else {
       result.push(args[i]);
     }

@@ -10,22 +10,11 @@ license: MIT
 
 Bi-directional sync between markdown files and Notion pages, plus database management utilities for research tracking and project management.
 
-## Upgrading from v1.x
+## Upgrading
 
-v2.0 requires passing `--token` to all scripts. The `NOTION_API_KEY` environment variable is no longer read.
+**From v2.x:** v3.0 adds `--token-file`, `--token-stdin`, and `NOTION_API_KEY` env var as token sources. `--token` still works but is no longer recommended (credentials visible in process listings). No other breaking changes.
 
-**Before (v1.x):**
-```bash
-export NOTION_API_KEY="ntn_..."
-node scripts/search-notion.js "query"
-```
-
-**After (v2.0):**
-```bash
-node scripts/search-notion.js --token "ntn_..." "query"
-```
-
-If you use a wrapper script or agent that sets `NOTION_API_KEY`, update it to pass `--token` instead.
+**From v1.x:** v2.0+ requires explicit token passing. The implicit `NOTION_API_KEY` env var is now supported again as a fallback, but explicit methods are preferred.
 
 ## Requirements
 
@@ -37,10 +26,31 @@ If you use a wrapper script or agent that sets `NOTION_API_KEY`, update it to pa
 1. Go to https://www.notion.so/my-integrations
 2. Create a new integration (or use an existing one)
 3. Copy the "Internal Integration Token"
-4. Pass the token to scripts via `--token`:
+4. Pass the token using one of these methods (in order of security):
+
+   **Option A — Token file (recommended for automation):**
    ```bash
-   node scripts/search-notion.js "query" --token "ntn_your_token_here"
+   echo "ntn_your_token" > ~/.notion-token && chmod 600 ~/.notion-token
+   node scripts/search-notion.js "query" --token-file ~/.notion-token
    ```
+
+   **Option B — Stdin pipe (recommended for scripts):**
+   ```bash
+   echo "$NOTION_API_KEY" | node scripts/search-notion.js "query" --token-stdin
+   ```
+
+   **Option C — Environment variable:**
+   ```bash
+   export NOTION_API_KEY="ntn_your_token"
+   node scripts/search-notion.js "query"
+   ```
+
+   **Option D — Direct argument (least secure):**
+   ```bash
+   node scripts/search-notion.js "query" --token "ntn_your_token"
+   ```
+   ⚠️ Token visible in `ps` output and shell history. Use for quick testing only.
+
 5. Share your Notion pages/databases with the integration:
    - Open the page/database in Notion
    - Click "Share" → "Invite"
@@ -218,12 +228,12 @@ node scripts/notion-to-md.js \
 Monitor Notion pages for edits and compare with local markdown files.
 
 ```bash
-node scripts/watch-notion.js --token "<token>" "<page-id>" "<local-markdown-path>"
+node scripts/watch-notion.js --token-file ~/.notion-token "<page-id>" "<local-markdown-path>"
 ```
 
 **Example:**
 ```bash
-node scripts/watch-notion.js --token "ntn_..." \
+node scripts/watch-notion.js --token-file ~/.notion-token \
   "abc123-example-page-id-456def" \
   "projects/newsletter-draft.md"
 ```
