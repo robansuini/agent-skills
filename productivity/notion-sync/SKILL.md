@@ -12,9 +12,9 @@ Bi-directional sync between markdown files and Notion pages, plus database manag
 
 ## Upgrading
 
-**From v2.x:** v3.0 adds `--token-file`, `--token-stdin`, and `NOTION_API_KEY` env var as token sources. `--token` still works but is no longer recommended (credentials visible in process listings). No other breaking changes.
+**From v2.0:** v2.1 adds `--token-file`, `--token-stdin`, and `NOTION_API_KEY` env var as additional token sources. `--token` still works exactly as before. No breaking changes.
 
-**From v1.x:** v2.0+ requires explicit token passing. The implicit `NOTION_API_KEY` env var is now supported again as a fallback, but explicit methods are preferred.
+**From v1.x:** v2.0+ requires explicit token passing. See v2.0 changelog for migration details.
 
 ## Requirements
 
