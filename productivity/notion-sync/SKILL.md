@@ -12,9 +12,9 @@ Bi-directional sync between markdown files and Notion pages, plus database manag
 
 ## Upgrading
 
-**From v2.0:** v2.1 adds `--token-file`, `--token-stdin`, and `NOTION_API_KEY` env var as additional token sources. `--token` still works exactly as before. No breaking changes.
+**From v2.0:** Replace `--token "ntn_..."` with `--token-file`, `--token-stdin`, or `NOTION_API_KEY` env var. Bare `--token` is no longer accepted (credentials should never appear in process listings).
 
-**From v1.x:** v2.0+ requires explicit token passing. See v2.0 changelog for migration details.
+**From v1.x:** See v2.0 changelog for migration details.
 
 ## Requirements
 
@@ -28,13 +28,13 @@ Bi-directional sync between markdown files and Notion pages, plus database manag
 3. Copy the "Internal Integration Token"
 4. Pass the token using one of these methods (in order of security):
 
-   **Option A — Token file (recommended for automation):**
+   **Option A — Token file (recommended):**
    ```bash
    echo "ntn_your_token" > ~/.notion-token && chmod 600 ~/.notion-token
    node scripts/search-notion.js "query" --token-file ~/.notion-token
    ```
 
-   **Option B — Stdin pipe (recommended for scripts):**
+   **Option B — Stdin pipe:**
    ```bash
    echo "$NOTION_API_KEY" | node scripts/search-notion.js "query" --token-stdin
    ```
@@ -44,12 +44,6 @@ Bi-directional sync between markdown files and Notion pages, plus database manag
    export NOTION_API_KEY="ntn_your_token"
    node scripts/search-notion.js "query"
    ```
-
-   **Option D — Direct argument (least secure):**
-   ```bash
-   node scripts/search-notion.js "query" --token "ntn_your_token"
-   ```
-   ⚠️ Token visible in `ps` output and shell history. Use for quick testing only.
 
 5. Share your Notion pages/databases with the integration:
    - Open the page/database in Notion
