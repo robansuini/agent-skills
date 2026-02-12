@@ -9,6 +9,7 @@ const {
   checkApiKey,
   notionRequest,
   extractTitle,
+  stripTokenArg,
 } = require('./notion-utils.js');
 
 checkApiKey();
@@ -35,7 +36,7 @@ async function searchNotion(query, filter = null, pageSize = 10) {
 }
 
 async function main() {
-  const args = process.argv.slice(2);
+  const args = stripTokenArg(process.argv.slice(2));
 
   if (args.length === 0 || args[0] === '--help') {
     console.log('Usage: search-notion.js <query> [options]');

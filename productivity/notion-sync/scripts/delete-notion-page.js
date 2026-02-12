@@ -5,12 +5,13 @@
  * Usage: delete-notion-page.js <page-id>
  */
 
-const { checkApiKey, notionRequest } = require('./notion-utils.js');
+const { checkApiKey, notionRequest, stripTokenArg } = require('./notion-utils.js');
 
 checkApiKey();
 
 async function main() {
-  const pageId = process.argv[2];
+  const args = stripTokenArg(process.argv.slice(2));
+  const pageId = args[0];
 
   if (!pageId || pageId === '--help') {
     console.error('Usage: delete-notion-page.js <page-id>');

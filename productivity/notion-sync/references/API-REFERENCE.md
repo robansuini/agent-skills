@@ -4,13 +4,13 @@ Detailed technical reference for all Notion sync scripts and utilities.
 
 ## Environment Setup
 
-### Required Environment Variable
+### Notion Token
+
+All scripts require a `--token` argument with your Notion integration token:
 
 ```bash
-export NOTION_API_KEY="ntn_your_token_here"
+node scripts/search-notion.js "query" --token "ntn_your_token_here"
 ```
-
-All scripts read this variable at runtime.
 
 ## Scripts Reference
 
@@ -208,7 +208,7 @@ Notion API limits:
 **Solutions:**
 1. Verify page/database is shared with your integration
 2. Check page ID format (32 chars, no extra characters)
-3. Confirm `NOTION_API_KEY` is set and valid
+3. Confirm your `--token` value is valid
 
 ### Property Update Failures
 

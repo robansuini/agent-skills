@@ -12,12 +12,13 @@ const {
   notionRequest,
   parseMarkdownToBlocks,
   appendBlocksBatched,
+  stripTokenArg,
 } = require('./notion-utils.js');
 
 checkApiKey();
 
 async function main() {
-  const args = process.argv.slice(2);
+  const args = stripTokenArg(process.argv.slice(2));
 
   if (args.length < 3 || args[0] === '--help') {
     console.error('Usage: md-to-notion.js <markdown-file> <parent-page-id> <page-title>');

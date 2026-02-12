@@ -8,25 +8,53 @@ const https = require('https');
 const NOTION_VERSION = '2025-09-03';
 
 /**
- * Get the Notion API key from environment
+ * Parse --token <value> from process.argv
  */
-function getApiKey() {
-  return process.env.NOTION_API_KEY;
+function parseTokenArg() {
+  const args = process.argv;
+  for (let i = 2; i < args.length; i++) {
+    if (args[i] === '--token' && args[i + 1]) {
+      return args[i + 1];
+    }
+  }
+  return null;
 }
 
 /**
- * Check if NOTION_API_KEY is set, exit with helpful message if not
+ * Get the Notion API key from --token argument
+ */
+function getApiKey() {
+  return parseTokenArg();
+}
+
+/**
+ * Check if a Notion API token was provided, exit with helpful message if not
  */
 function checkApiKey() {
   if (!getApiKey()) {
-    console.error('Error: NOTION_API_KEY environment variable not set');
+    console.error('Error: No Notion API token provided');
     console.error('');
-    console.error('Setup:');
-    console.error('  1. Create an integration at https://www.notion.so/my-integrations');
-    console.error('  2. Set the environment variable:');
-    console.error('     export NOTION_API_KEY="ntn_your_token_here"');
+    console.error('Usage:');
+    console.error('  node scripts/<script>.js --token "ntn_your_token_here" [args]');
+    console.error('');
+    console.error('Create an integration at https://www.notion.so/my-integrations');
     process.exit(1);
   }
+}
+
+/**
+ * Strip --token <value> from an args array so scripts don't parse it as their own args
+ */
+function stripTokenArg(args) {
+  const result = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--token' && i + 1 < args.length) {
+      i++; // skip value
+    } else {
+      result.push(args[i]);
+    }
+  }
+  return result;
 }
 
 /**
@@ -35,7 +63,7 @@ function checkApiKey() {
 function notionRequest(path, method, data = null) {
   const apiKey = getApiKey();
   if (!apiKey) {
-    return Promise.reject(new Error('NOTION_API_KEY environment variable not set'));
+    return Promise.reject(new Error('No Notion API token provided. Pass --token to the script.'));
   }
 
   return new Promise((resolve, reject) => {
@@ -103,7 +131,7 @@ function createDetailedError(statusCode, body) {
       return new Error(`Bad request: ${errorMessage}`);
 
     case 401:
-      return new Error('Authentication failed. Check your NOTION_API_KEY environment variable.');
+      return new Error('Authentication failed. Check that your --token value is valid.');
 
     case 404:
       if (errorCode === 'object_not_found') {
@@ -530,6 +558,7 @@ module.exports = {
   NOTION_VERSION,
   getApiKey,
   checkApiKey,
+  stripTokenArg,
 
   // HTTP
   notionRequest,
