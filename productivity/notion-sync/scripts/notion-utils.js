@@ -14,13 +14,12 @@ let _cachedToken = undefined;
 /**
  * Resolve the Notion API token from multiple sources (in priority order):
  *
- * 1. --token <value>        Direct argument (convenient but visible in ps/history)
- * 2. --token-file <path>    Read from a file (recommended for automation)
- * 3. --token-stdin           Read from stdin (recommended for pipes)
- * 4. NOTION_API_KEY env var  Environment variable fallback
+ * 1. --token-file <path>    Read from a file (recommended for automation)
+ * 2. --token-stdin           Read from stdin (recommended for pipes)
+ * 3. NOTION_API_KEY env var  Environment variable fallback
  *
- * Security note: --token-file or piping via stdin are preferred over bare
- * --token to avoid credentials appearing in process listings or shell history.
+ * Credentials are never accepted as bare command-line arguments to avoid
+ * exposure in process listings and shell history.
  */
 function resolveToken() {
   if (_cachedToken !== undefined) return _cachedToken;
@@ -28,11 +27,6 @@ function resolveToken() {
   const args = process.argv;
 
   for (let i = 2; i < args.length; i++) {
-    // --token <value> (direct, least secure)
-    if (args[i] === '--token' && args[i + 1]) {
-      _cachedToken = args[i + 1];
-      return _cachedToken;
-    }
     // --token-file <path>
     if (args[i] === '--token-file' && args[i + 1]) {
       try {
@@ -83,9 +77,8 @@ function checkApiKey() {
     console.error('  node scripts/<script>.js --token-file ~/.notion-token [args]');
     console.error('  echo "$NOTION_API_KEY" | node scripts/<script>.js --token-stdin [args]');
     console.error('  NOTION_API_KEY=ntn_... node scripts/<script>.js [args]');
-    console.error('  node scripts/<script>.js --token "ntn_..." [args]');
     console.error('');
-    console.error('Recommended: --token-file or --token-stdin (avoids credentials in process list)');
+    console.error('Credentials are never passed as bare CLI arguments (security best practice).');
     console.error('Create an integration at https://www.notion.so/my-integrations');
     process.exit(1);
   }
@@ -97,7 +90,7 @@ function checkApiKey() {
 function stripTokenArg(args) {
   const result = [];
   for (let i = 0; i < args.length; i++) {
-    if ((args[i] === '--token' || args[i] === '--token-file') && i + 1 < args.length) {
+    if (args[i] === '--token-file' && i + 1 < args.length) {
       i++; // skip value
     } else if (args[i] === '--token-stdin') {
       // skip flag only (no value)
