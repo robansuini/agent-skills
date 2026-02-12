@@ -4,6 +4,11 @@ description: Bi-directional sync and management for Notion pages and databases. 
 homepage: https://github.com/robansuini/agent-skills
 repository: https://github.com/robansuini/agent-skills/tree/main/productivity/notion-sync
 license: MIT
+metadata:
+  clawdis:
+    requires:
+      env: [NOTION_API_KEY]
+      bins: [node]
 ---
 
 # Notion Sync
