@@ -12,6 +12,7 @@ const {
   normalizeId,
   getAllBlocks,
   blocksToMarkdown,
+  stripTokenArg,
 } = require('./notion-utils.js');
 
 /**
@@ -23,7 +24,7 @@ async function getPage(pageId) {
 }
 
 async function main() {
-  const args = process.argv.slice(2);
+  const args = stripTokenArg(process.argv.slice(2));
 
   if (args.length < 1 || args[0] === '--help') {
     console.error('Usage: notion-to-md.js <page-id> [output-file]');

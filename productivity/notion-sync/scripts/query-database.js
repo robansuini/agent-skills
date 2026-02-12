@@ -9,6 +9,7 @@ const {
   checkApiKey,
   notionRequest,
   extractPropertyValue,
+  stripTokenArg,
 } = require('./notion-utils.js');
 
 checkApiKey();
@@ -51,7 +52,7 @@ async function queryDatabase(databaseId, filter = null, sorts = null, pageSize =
 }
 
 async function main() {
-  const args = process.argv.slice(2);
+  const args = stripTokenArg(process.argv.slice(2));
 
   if (args.length === 0 || args[0] === '--help') {
     console.log('Usage: query-database.js <database-id> [options]');

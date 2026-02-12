@@ -9,6 +9,7 @@ const {
   checkApiKey,
   notionRequest,
   formatPropertyValue,
+  stripTokenArg,
 } = require('./notion-utils.js');
 
 checkApiKey();
@@ -31,7 +32,7 @@ async function updatePageProperties(pageId, propertyName, value, propertyType = 
 }
 
 async function main() {
-  const args = process.argv.slice(2);
+  const args = stripTokenArg(process.argv.slice(2));
 
   if (args.length < 3 || args[0] === '--help') {
     console.log('Usage: update-page-properties.js <page-id> <property-name> <value> [--type <type>]');

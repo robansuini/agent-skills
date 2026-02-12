@@ -11,12 +11,13 @@ const {
   notionRequest,
   parseMarkdownToBlocks,
   appendBlocksBatched,
+  stripTokenArg,
 } = require('./notion-utils.js');
 
 checkApiKey();
 
 async function main() {
-  const args = process.argv.slice(2);
+  const args = stripTokenArg(process.argv.slice(2));
 
   if (args.length < 3 || args[0] === '--help') {
     console.error('Usage: add-to-database.js <database-id> <page-title> <markdown-file-path>');

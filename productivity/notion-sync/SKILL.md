@@ -10,19 +10,36 @@ license: MIT
 
 Bi-directional sync between markdown files and Notion pages, plus database management utilities for research tracking and project management.
 
+## Upgrading from v1.x
+
+v2.0 requires passing `--token` to all scripts. The `NOTION_API_KEY` environment variable is no longer read.
+
+**Before (v1.x):**
+```bash
+export NOTION_API_KEY="ntn_..."
+node scripts/search-notion.js "query"
+```
+
+**After (v2.0):**
+```bash
+node scripts/search-notion.js --token "ntn_..." "query"
+```
+
+If you use a wrapper script or agent that sets `NOTION_API_KEY`, update it to pass `--token` instead.
+
 ## Requirements
 
 - **Node.js** v18 or later
-- **`NOTION_API_KEY`** environment variable set with your integration token
+- A **Notion integration token** (starts with `ntn_` or `secret_`)
 
 ## Setup
 
 1. Go to https://www.notion.so/my-integrations
 2. Create a new integration (or use an existing one)
-3. Copy the "Internal Integration Token" (starts with `ntn_` or `secret_`)
-4. Make it available as an environment variable:
+3. Copy the "Internal Integration Token"
+4. Pass the token to scripts via `--token`:
    ```bash
-   export NOTION_API_KEY="ntn_your_token_here"
+   node scripts/search-notion.js "query" --token "ntn_your_token_here"
    ```
 5. Share your Notion pages/databases with the integration:
    - Open the page/database in Notion
@@ -201,17 +218,12 @@ node scripts/notion-to-md.js \
 Monitor Notion pages for edits and compare with local markdown files.
 
 ```bash
-node scripts/watch-notion.js "<page-id>" "<local-markdown-path>"
-
-# Or use environment variables
-export NOTION_WATCH_PAGE_ID="<your-page-id>"
-export NOTION_WATCH_LOCAL_PATH="/path/to/your/draft.md"
-node scripts/watch-notion.js
+node scripts/watch-notion.js --token "<token>" "<page-id>" "<local-markdown-path>"
 ```
 
 **Example:**
 ```bash
-node scripts/watch-notion.js \
+node scripts/watch-notion.js --token "ntn_..." \
   "abc123-example-page-id-456def" \
   "projects/newsletter-draft.md"
 ```
