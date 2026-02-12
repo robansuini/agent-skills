@@ -1,6 +1,9 @@
 ---
 name: notion-sync
 description: Bi-directional sync and management for Notion pages and databases. Use when working with Notion workspaces for collaborative editing, research tracking, project management, or when you need to sync markdown files to/from Notion pages or monitor Notion pages for changes.
+homepage: https://github.com/robansuini/agent-skills
+repository: https://github.com/robansuini/agent-skills/tree/main/productivity/notion-sync
+license: MIT
 env:
   - NOTION_API_KEY
 ---
