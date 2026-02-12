@@ -1,6 +1,8 @@
 ---
 name: notion-sync
 description: Bi-directional sync and management for Notion pages and databases. Use when working with Notion workspaces for collaborative editing, research tracking, project management, or when you need to sync markdown files to/from Notion pages or monitor Notion pages for changes.
+env:
+  - NOTION_API_KEY
 ---
 
 # Notion Sync
@@ -11,25 +13,32 @@ Bi-directional sync between markdown files and Notion pages, plus database manag
 
 ### API Key Configuration
 
-Store the Notion API key in macOS Keychain:
+All scripts read the API key from the `NOTION_API_KEY` environment variable.
 
+**Option 1 — Environment variable (all platforms):**
 ```bash
-# Add to keychain (will prompt for the secret)
+# Add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
+export NOTION_API_KEY="ntn_your_key_here"
+```
+
+**Option 2 — macOS Keychain (recommended on macOS):**
+```bash
+# Store securely in Keychain
 security add-generic-password -a "$USER" -s "openclaw.notion_api_key" -w
 
-# Add to environment loader (e.g., ~/.openclaw/bin/openclaw-env.sh)
+# Add to your environment loader
 export NOTION_API_KEY="$(security find-generic-password -a "$USER" -s "openclaw.notion_api_key" -w)"
-
-# Restart gateway to load the key
-openclaw gateway restart
 ```
+
+**Option 3 — OpenClaw gateway environment:**
+If running under OpenClaw, add `NOTION_API_KEY` to your gateway's environment configuration and restart the gateway to pick it up.
 
 ### Integration Setup
 
 1. Go to https://www.notion.so/my-integrations
 2. Create a new integration or use an existing one
-3. Copy the "Internal Integration Token" (starts with `secret_`)
-4. Store it in Keychain as shown above
+3. Copy the "Internal Integration Token" (starts with `ntn_` or `secret_`)
+4. Store it using one of the options above
 5. Share your Notion pages/databases with the integration:
    - Open the page/database in Notion
    - Click "Share" → "Invite"
@@ -390,7 +399,7 @@ Or use the 32-char format: `abc123examplepageid456def` (hyphens optional)
 
 **"Module not found" error:**
 - Scripts use built-in Node.js https module (no npm install needed)
-- Ensure running from correct directory with `cd ~/clawd`
+- Ensure running from the skill's directory (where scripts/ lives)
 
 **Rate limiting:**
 - Notion API has rate limits (~3 requests/second)
