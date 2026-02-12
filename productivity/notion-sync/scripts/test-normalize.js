@@ -20,6 +20,7 @@ const {
   richTextToMarkdown,
   richTextToPlain,
   createDetailedError,
+  stripTokenArg,
 } = require('./notion-utils.js');
 
 let passed = 0;
@@ -480,7 +481,7 @@ console.log('\n📋 createDetailedError');
 
 {
   const err = createDetailedError(401, '{}');
-  assert(err.message.includes('Authentication'), '401: authentication error');
+  assert(err.message.includes('Authentication') || err.message.includes('--token'), '401: authentication error');
 }
 
 {
@@ -507,6 +508,39 @@ console.log('\n📋 createDetailedError');
   const err = createDetailedError(418, 'not json');
   assert(err.message.includes('418'), 'Non-JSON body handled');
 }
+
+// --- stripTokenArg ---
+console.log('\n📋 stripTokenArg');
+
+assertEqual(
+  stripTokenArg(['--token', 'ntn_abc', 'query']),
+  ['query'],
+  'Strips --token and its value'
+);
+
+assertEqual(
+  stripTokenArg(['query', '--limit', '5']),
+  ['query', '--limit', '5'],
+  'No --token: passes through unchanged'
+);
+
+assertEqual(
+  stripTokenArg([]),
+  [],
+  'Empty array'
+);
+
+assertEqual(
+  stripTokenArg(['--filter', 'page', '--token', 'ntn_abc', '--limit', '5']),
+  ['--filter', 'page', '--limit', '5'],
+  'Strips --token from middle of args'
+);
+
+assertEqual(
+  stripTokenArg(['--token']),
+  ['--token'],
+  '--token without value: kept as-is'
+);
 
 // --- Summary ---
 console.log(`\n${'='.repeat(50)}`);

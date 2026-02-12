@@ -5,12 +5,13 @@
  * Usage: get-database-schema.js <database-id>
  */
 
-const { checkApiKey, notionRequest } = require('./notion-utils.js');
+const { checkApiKey, notionRequest, stripTokenArg } = require('./notion-utils.js');
 
 checkApiKey();
 
 async function main() {
-  const dbId = process.argv[2];
+  const args = stripTokenArg(process.argv.slice(2));
+  const dbId = args[0];
 
   if (!dbId || dbId === '--help') {
     console.error('Usage: get-database-schema.js <database-id>');

@@ -14,6 +14,7 @@ const {
   normalizeId,
   getAllBlocks,
   blocksToMarkdown,
+  stripTokenArg,
 } = require('./notion-utils.js');
 
 // State file location — relative to the workspace, not the script
@@ -102,16 +103,12 @@ async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
 }
 
 async function main() {
-  const args = process.argv.slice(2);
-  let pageId = args[0] || process.env.NOTION_WATCH_PAGE_ID;
-  let localPath = args[1] || process.env.NOTION_WATCH_LOCAL_PATH;
+  const args = stripTokenArg(process.argv.slice(2));
+  let pageId = args[0];
+  let localPath = args[1];
 
   if (!pageId || !localPath) {
-    console.error('Usage: watch-notion.js <page-id> <local-path>');
-    console.error('');
-    console.error('Environment variables (fallback):');
-    console.error('  NOTION_WATCH_PAGE_ID    Default page ID');
-    console.error('  NOTION_WATCH_LOCAL_PATH Default local path');
+    console.error('Usage: watch-notion.js --token <token> <page-id> <local-path>');
     process.exit(1);
   }
 
