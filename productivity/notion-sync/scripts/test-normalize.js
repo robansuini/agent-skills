@@ -542,6 +542,30 @@ assertEqual(
   '--token without value: kept as-is'
 );
 
+assertEqual(
+  stripTokenArg(['--token-file', '/path/to/token', 'query']),
+  ['query'],
+  'Strips --token-file and its value'
+);
+
+assertEqual(
+  stripTokenArg(['--token-stdin', 'query', '--limit', '5']),
+  ['query', '--limit', '5'],
+  'Strips --token-stdin flag (no value)'
+);
+
+assertEqual(
+  stripTokenArg(['--filter', 'page', '--token-file', '~/.notion-token', '--limit', '5']),
+  ['--filter', 'page', '--limit', '5'],
+  'Strips --token-file from middle of args'
+);
+
+assertEqual(
+  stripTokenArg(['--token-stdin', '--token-file', '/tmp/t', 'search']),
+  ['search'],
+  'Strips multiple token flags at once'
+);
+
 // --- Summary ---
 console.log(`\n${'='.repeat(50)}`);
 console.log(`Results: ${passed} passed, ${failed} failed, ${passed + failed} total`);
