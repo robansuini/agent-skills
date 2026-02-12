@@ -62,5 +62,7 @@ if (require.main === module) {
   checkApiKey();
   main();
 } else {
-  module.exports = { getPage, main };
+  // Re-export utilities for backwards compatibility (v1.0.x)
+  // Prefer importing from notion-utils.js directly for new code
+  module.exports = { getPage, main, getAllBlocks, blocksToMarkdown, normalizeId };
 }
