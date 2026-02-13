@@ -15,10 +15,31 @@ const {
   getAllBlocks,
   blocksToMarkdown,
   stripTokenArg,
+  expandHomePath,
 } = require('./notion-utils.js');
 
 // State file location — relative to the workspace, not the script
 const DEFAULT_STATE_FILE = path.join(process.cwd(), 'memory', 'notion-watch-state.json');
+
+function parseWatchArgs(args) {
+  let stateFile = DEFAULT_STATE_FILE;
+  const positional = [];
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--state-file' && args[i + 1]) {
+      stateFile = expandHomePath(args[i + 1]);
+      i++;
+      continue;
+    }
+    positional.push(args[i]);
+  }
+
+  return {
+    pageId: positional[0],
+    localPath: positional[1],
+    stateFile,
+  };
+}
 
 function loadState(stateFile) {
   if (!fs.existsSync(stateFile)) return { pages: {} };
@@ -104,15 +125,14 @@ async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
 
 async function main() {
   const args = stripTokenArg(process.argv.slice(2));
-  let pageId = args[0];
-  let localPath = args[1];
+  const { pageId, localPath, stateFile } = parseWatchArgs(args);
 
   if (!pageId || !localPath) {
-    console.error('Usage: watch-notion.js --token <token> <page-id> <local-path>');
+    console.error('Usage: watch-notion.js [--state-file <path>] <page-id> <local-path>');
     process.exit(1);
   }
 
-  const result = await checkPage(pageId, localPath);
+  const result = await checkPage(pageId, localPath, stateFile);
   console.log(JSON.stringify(result, null, 2));
   return result;
 }
@@ -124,5 +144,5 @@ if (require.main === module) {
     process.exit(1);
   });
 } else {
-  module.exports = { checkPage };
+  module.exports = { checkPage, parseWatchArgs };
 }

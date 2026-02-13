@@ -31,7 +31,7 @@ Bi-directional sync between markdown files and Notion pages, plus database manag
 1. Go to https://www.notion.so/my-integrations
 2. Create a new integration (or use an existing one)
 3. Copy the "Internal Integration Token"
-4. Pass the token using one of these methods (in order of security):
+4. Pass the token using one of these methods (priority order used by scripts):
 
    **Option A — Token file (recommended):**
    ```bash
@@ -49,6 +49,8 @@ Bi-directional sync between markdown files and Notion pages, plus database manag
    export NOTION_API_KEY="ntn_your_token"
    node scripts/search-notion.js "query"
    ```
+
+   **Auto default:** If `~/.notion-token` exists, scripts use it automatically even without `--token-file`.
 
 5. Share your Notion pages/databases with the integration:
    - Open the page/database in Notion
@@ -227,17 +229,23 @@ node scripts/notion-to-md.js \
 Monitor Notion pages for edits and compare with local markdown files.
 
 ```bash
-node scripts/watch-notion.js --token-file ~/.notion-token "<page-id>" "<local-markdown-path>"
+node scripts/watch-notion.js "<page-id>" "<local-markdown-path>" [--state-file <path>]
 ```
 
 **Example:**
 ```bash
-node scripts/watch-notion.js --token-file ~/.notion-token \
+node scripts/watch-notion.js \
   "abc123-example-page-id-456def" \
   "projects/newsletter-draft.md"
 ```
 
-**State tracking:** Maintains state in `memory/notion-watch-state.json`:
+**State tracking:** By default maintains state in `memory/notion-watch-state.json` (relative to current working directory). You can override with `--state-file <path>` (supports `~` expansion):
+
+```bash
+node scripts/watch-notion.js "<page-id>" "<local-path>" --state-file ~/.cache/notion-watch-state.json
+```
+
+Default state schema:
 ```json
 {
   "pages": {
@@ -355,7 +363,7 @@ node scripts/delete-notion-page.js <page-id>
 
 3. **Monitor for changes:**
    ```bash
-   node scripts/watch-notion.js
+   node scripts/watch-notion.js <page-id> <local-path>
    # Returns hasChanges: true when edited
    ```
 
