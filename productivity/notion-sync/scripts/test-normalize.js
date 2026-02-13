@@ -8,6 +8,9 @@
  * Run: node scripts/test-normalize.js
  */
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const {
   normalizeId,
   parseRichText,
@@ -21,7 +24,12 @@ const {
   richTextToPlain,
   createDetailedError,
   stripTokenArg,
+  expandHomePath,
+  resolveToken,
+  _resetTokenCache,
+  wrapNetworkError,
 } = require('./notion-utils.js');
+const { parseWatchArgs } = require('./watch-notion.js');
 
 let passed = 0;
 let failed = 0;
@@ -547,6 +555,79 @@ assertEqual(
   ['search'],
   'Strips multiple token flags at once'
 );
+
+// --- token resolution and path expansion ---
+console.log('\n📋 token resolution and path expansion');
+
+{
+  const originalHomedir = os.homedir;
+  os.homedir = () => '/tmp/notion-home';
+  assertEqual(
+    expandHomePath('~/.notion-token'),
+    '/tmp/notion-home/.notion-token',
+    '~ expansion in token file path'
+  );
+  os.homedir = originalHomedir;
+}
+
+{
+  const originalArgv = process.argv.slice();
+  const originalEnv = process.env.NOTION_API_KEY;
+  const originalHomedir = os.homedir;
+
+  const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'notion-home-'));
+  const defaultTokenFile = path.join(tempHome, '.notion-token');
+  fs.writeFileSync(defaultTokenFile, 'token_from_default_file\n', 'utf8');
+
+  delete process.env.NOTION_API_KEY;
+  process.argv = ['node', 'script.js'];
+  os.homedir = () => tempHome;
+  _resetTokenCache();
+
+  assertEqual(resolveToken(), 'token_from_default_file', 'Auto-detects ~/.notion-token before env var');
+
+  _resetTokenCache();
+  process.argv = originalArgv;
+  os.homedir = originalHomedir;
+  if (originalEnv === undefined) {
+    delete process.env.NOTION_API_KEY;
+  } else {
+    process.env.NOTION_API_KEY = originalEnv;
+  }
+}
+
+// --- error message formatting ---
+console.log('\n📋 friendly error messages');
+
+{
+  const err401 = createDetailedError(401, '{}');
+  assert(err401.message.includes('Authentication failed'), '401 has friendly auth message');
+
+  const err404 = createDetailedError(404, JSON.stringify({ code: 'object_not_found', message: 'Not found' }));
+  assert(err404.message.includes('Verify the ID'), '404 has actionable not-found guidance');
+
+  const networkErr = wrapNetworkError({ code: 'ENOTFOUND', message: 'lookup failed' });
+  assertEqual(
+    networkErr.message,
+    'Could not reach Notion API. Check your internet connection.',
+    'Network error maps to friendly connectivity guidance'
+  );
+}
+
+// --- watch-notion --state-file parsing ---
+console.log('\n📋 watch-notion --state-file parsing');
+
+{
+  const originalHomedir = os.homedir;
+  os.homedir = () => '/tmp/notion-home';
+
+  const parsed = parseWatchArgs(['--state-file', '~/.watch-state.json', 'page-id', 'local.md']);
+  assertEqual(parsed.pageId, 'page-id', 'Parses page-id with --state-file');
+  assertEqual(parsed.localPath, 'local.md', 'Parses local path with --state-file');
+  assertEqual(parsed.stateFile, '/tmp/notion-home/.watch-state.json', 'Expands ~ in --state-file path');
+
+  os.homedir = originalHomedir;
+}
 
 // --- Summary ---
 console.log(`\n${'='.repeat(50)}`);
