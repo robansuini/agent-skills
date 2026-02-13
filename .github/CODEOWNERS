@@ -1,11 +1,2 @@
 # Code Owners
-# 
-# These users will be automatically requested for review when PRs are opened
-# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
-
-# Rob reviews all changes
-* @robansuini
-
-# Specific directories (if needed later)
-# /productivity/ @robansuini
-# /development/ @robansuini
+* @axos-ai @robansuini
