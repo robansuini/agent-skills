@@ -6,10 +6,18 @@ Detailed technical reference for all Notion sync scripts and utilities.
 
 ### Notion Token
 
-All scripts require a `--token` argument with your Notion integration token:
+All scripts require a Notion integration token. Supported sources (priority order):
+
+1. `--token-file <path>` (supports `~` expansion)
+2. `--token-stdin` (pipe token through stdin)
+3. `~/.notion-token` (auto-detected if present)
+4. `NOTION_API_KEY` env var
 
 ```bash
-node scripts/search-notion.js "query" --token "ntn_your_token_here"
+node scripts/search-notion.js "query" --token-file ~/.notion-token
+# or
+
+echo "$NOTION_API_KEY" | node scripts/search-notion.js "query" --token-stdin
 ```
 
 ## Scripts Reference
@@ -112,10 +120,10 @@ Monitor page for changes.
 
 **Signature:**
 ```bash
-node scripts/watch-notion.js
+node scripts/watch-notion.js [--state-file <path>] <page-id> <local-path>
 ```
 
-**State File:** `memory/notion-watch-state.json`
+**State File:** Default `memory/notion-watch-state.json` (relative to cwd), overridable with `--state-file` (supports `~` expansion)
 
 **State Schema:**
 ```json
@@ -172,7 +180,11 @@ Makes authenticated API requests to Notion.
 
 **Returns:** Promise resolving to response JSON
 
-**Error Handling:** Throws with detailed Notion API error messages
+**Error Handling:** Throws actionable messages for common failures:
+- Missing token: guidance for `--token-file`, `--token-stdin`, and `NOTION_API_KEY`
+- 401: authentication/access guidance
+- 404: page/database access/id guidance
+- Network errors: connectivity guidance
 
 #### `formatPropertyValue(type, value)`
 Formats property values for Notion API write operations.
@@ -208,7 +220,7 @@ Notion API limits:
 **Solutions:**
 1. Verify page/database is shared with your integration
 2. Check page ID format (32 chars, no extra characters)
-3. Confirm your `--token` value is valid
+3. Confirm your integration token is valid and available via --token-file, --token-stdin, ~/.notion-token, or NOTION_API_KEY
 
 ### Property Update Failures
 

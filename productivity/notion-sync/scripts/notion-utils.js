@@ -5,6 +5,8 @@
 
 const https = require('https');
 const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 const NOTION_VERSION = '2025-09-03';
 
@@ -16,7 +18,8 @@ let _cachedToken = undefined;
  *
  * 1. --token-file <path>    Read from a file (recommended for automation)
  * 2. --token-stdin           Read from stdin (recommended for pipes)
- * 3. NOTION_API_KEY env var  Environment variable fallback
+ * 3. ~/.notion-token         Auto-detected default token file
+ * 4. NOTION_API_KEY env var  Environment variable fallback
  *
  * Credentials are never accepted as bare command-line arguments to avoid
  * exposure in process listings and shell history.
@@ -30,7 +33,8 @@ function resolveToken() {
     // --token-file <path>
     if (args[i] === '--token-file' && args[i + 1]) {
       try {
-        _cachedToken = fs.readFileSync(args[i + 1], 'utf8').trim();
+        const tokenPath = expandHomePath(args[i + 1]);
+        _cachedToken = fs.readFileSync(tokenPath, 'utf8').trim();
         return _cachedToken;
       } catch (err) {
         console.error(`Error reading token file "${args[i + 1]}": ${err.message}`);
@@ -49,6 +53,18 @@ function resolveToken() {
     }
   }
 
+  // Auto-check default token file
+  const defaultTokenPath = path.join(os.homedir(), '.notion-token');
+  if (fs.existsSync(defaultTokenPath)) {
+    try {
+      _cachedToken = fs.readFileSync(defaultTokenPath, 'utf8').trim();
+      return _cachedToken;
+    } catch (err) {
+      console.error(`Error reading default token file "${defaultTokenPath}": ${err.message}`);
+      process.exit(1);
+    }
+  }
+
   // Env var fallback
   if (process.env.NOTION_API_KEY) {
     _cachedToken = process.env.NOTION_API_KEY;
@@ -57,6 +73,27 @@ function resolveToken() {
 
   _cachedToken = null;
   return null;
+}
+
+/**
+ * Expand a path that starts with ~ to the user's home directory
+ */
+function expandHomePath(inputPath) {
+  if (!inputPath) return inputPath;
+  if (inputPath === '~') return os.homedir();
+  if (inputPath.startsWith('~/')) return path.join(os.homedir(), inputPath.slice(2));
+  return inputPath;
+}
+
+/**
+ * Normalize network-level request errors into user-friendly guidance
+ */
+function wrapNetworkError(err) {
+  const networkCodes = new Set(['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT', 'ECONNRESET', 'EAI_AGAIN']);
+  if (networkCodes.has(err.code)) {
+    return new Error('Could not reach Notion API. Check your internet connection.');
+  }
+  return new Error(`Could not reach Notion API. ${err.message}`);
 }
 
 /**
@@ -73,10 +110,14 @@ function checkApiKey() {
   if (!getApiKey()) {
     console.error('Error: No Notion API token provided');
     console.error('');
+    console.error('No Notion API token found. Provide one via: --token-file <path>, --token-stdin (pipe), or NOTION_API_KEY env var.');
+    console.error('');
     console.error('Usage (pick one):');
     console.error('  node scripts/<script>.js --token-file ~/.notion-token [args]');
     console.error('  echo "$NOTION_API_KEY" | node scripts/<script>.js --token-stdin [args]');
     console.error('  NOTION_API_KEY=ntn_... node scripts/<script>.js [args]');
+    console.error('');
+    console.error('Default: if ~/.notion-token exists, it is used automatically.');
     console.error('');
     console.error('Credentials are never passed as bare CLI arguments (security best practice).');
     console.error('Create an integration at https://www.notion.so/my-integrations');
@@ -107,7 +148,7 @@ function stripTokenArg(args) {
 function notionRequest(path, method, data = null) {
   const apiKey = getApiKey();
   if (!apiKey) {
-    return Promise.reject(new Error('No Notion API token provided. Pass --token to the script.'));
+    return Promise.reject(new Error('No Notion API token found. Provide one via: --token-file <path>, --token-stdin (pipe), or NOTION_API_KEY env var.'));
   }
 
   return new Promise((resolve, reject) => {
@@ -145,7 +186,9 @@ function notionRequest(path, method, data = null) {
       });
     });
 
-    req.on('error', reject);
+    req.on('error', (err) => {
+      reject(wrapNetworkError(err));
+    });
     if (requestData) {
       req.write(requestData);
     }
@@ -175,11 +218,11 @@ function createDetailedError(statusCode, body) {
       return new Error(`Bad request: ${errorMessage}`);
 
     case 401:
-      return new Error('Authentication failed. Check that your --token value is valid.');
+      return new Error('Authentication failed. Check that your token is valid and has access to this resource.');
 
     case 404:
       if (errorCode === 'object_not_found') {
-        return new Error('Page/database not found. Make sure it is shared with your integration.');
+        return new Error('Page/database not found. Verify the ID and that your integration has access.');
       }
       return new Error(`Not found: ${errorMessage}`);
 
@@ -601,8 +644,11 @@ module.exports = {
   // Config
   NOTION_VERSION,
   getApiKey,
+  resolveToken,
   checkApiKey,
   stripTokenArg,
+  expandHomePath,
+  wrapNetworkError,
 
   // HTTP
   notionRequest,
@@ -629,4 +675,7 @@ module.exports = {
   // Page helpers
   getAllBlocks,
   appendBlocksBatched,
+
+  // Testing
+  _resetTokenCache: () => { _cachedToken = undefined; },
 };
