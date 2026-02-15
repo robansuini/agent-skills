@@ -24,6 +24,8 @@ const {
   richTextToPlain,
   createDetailedError,
   stripTokenArg,
+  hasJsonFlag,
+  log,
   expandHomePath,
   resolveToken,
   _resetTokenCache,
@@ -518,6 +520,37 @@ console.log('\n📋 createDetailedError');
   assert(err.message.includes('418'), 'Non-JSON body handled');
 }
 
+// --- hasJsonFlag ---
+console.log('\n📋 hasJsonFlag');
+
+{
+  const originalArgv = process.argv.slice();
+  process.argv = ['node', 'script.js', '--json'];
+  assertEqual(hasJsonFlag(), true, 'Returns true when --json is present');
+  process.argv = ['node', 'script.js', '--limit', '5'];
+  assertEqual(hasJsonFlag(), false, 'Returns false when --json is absent');
+  process.argv = originalArgv;
+}
+
+{
+  const originalArgv = process.argv.slice();
+  const originalConsoleError = console.error;
+  const captured = [];
+  console.error = (...args) => captured.push(args.join(' '));
+
+  process.argv = ['node', 'script.js'];
+  log('visible log');
+
+  process.argv = ['node', 'script.js', '--json'];
+  log('hidden log');
+
+  console.error = originalConsoleError;
+  process.argv = originalArgv;
+
+  assertEqual(captured.includes('visible log'), true, 'log() writes to stderr without --json');
+  assertEqual(captured.includes('hidden log'), false, 'log() is suppressed with --json');
+}
+
 // --- stripTokenArg ---
 console.log('\n📋 stripTokenArg');
 
@@ -556,6 +589,13 @@ assertEqual(
   ['search'],
   'Strips multiple token flags at once'
 );
+
+assertEqual(
+  stripTokenArg(['query', '--json', '--limit', '5']),
+  ['query', '--limit', '5'],
+  'Strips --json flag'
+);
+
 
 // --- token resolution and path expansion ---
 console.log('\n📋 token resolution and path expansion');
