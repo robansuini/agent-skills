@@ -30,6 +30,7 @@ const {
   wrapNetworkError,
 } = require('./notion-utils.js');
 const { parseWatchArgs } = require('./watch-notion.js');
+const { parseBatchUpdateArgs, DEFAULT_LIMIT } = require('./batch-update.js');
 
 let passed = 0;
 let failed = 0;
@@ -627,6 +628,48 @@ console.log('\n📋 watch-notion --state-file parsing');
   assertEqual(parsed.stateFile, '/tmp/notion-home/.watch-state.json', 'Expands ~ in --state-file path');
 
   os.homedir = originalHomedir;
+}
+
+// --- batch-update argument parsing ---
+console.log('\n📋 batch-update argument parsing');
+
+{
+  const parsed = parseBatchUpdateArgs([
+    'db-123',
+    'Status',
+    'Review',
+    '--filter',
+    '{"property":"Status","select":{"equals":"Draft"}}',
+    '--type',
+    'select',
+    '--limit',
+    '25',
+  ]);
+
+  assertEqual(parsed.stdinMode, false, 'Query mode detected by default');
+  assertEqual(parsed.databaseId, 'db-123', 'Query mode parses database ID');
+  assertEqual(parsed.propertyName, 'Status', 'Query mode parses property name');
+  assertEqual(parsed.value, 'Review', 'Query mode parses value');
+  assertEqual(parsed.propertyType, 'select', 'Query mode parses --type');
+  assertEqual(parsed.limit, 25, 'Query mode parses --limit');
+  assertEqual(parsed.filter.property, 'Status', 'Query mode parses --filter JSON');
+}
+
+{
+  const parsed = parseBatchUpdateArgs(['--stdin', 'Status', 'Review', '--type', 'select']);
+  assertEqual(parsed.stdinMode, true, '--stdin mode detection');
+  assertEqual(parsed.propertyName, 'Status', 'stdin mode parses property name');
+  assertEqual(parsed.value, 'Review', 'stdin mode parses value');
+}
+
+{
+  const parsed = parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--dry-run']);
+  assertEqual(parsed.dryRun, true, '--dry-run flag detection');
+}
+
+{
+  const parsed = parseBatchUpdateArgs(['db-123', 'Status', 'Review']);
+  assertEqual(parsed.limit, DEFAULT_LIMIT, '--limit default value');
 }
 
 // --- Summary ---
