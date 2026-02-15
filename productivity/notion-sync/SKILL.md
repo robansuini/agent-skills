@@ -57,6 +57,20 @@ Bi-directional sync between markdown files and Notion pages, plus database manag
    - Click "Share" → "Invite"
    - Select your integration
 
+
+## JSON Output Mode
+
+All scripts support a global `--json` flag.
+
+- Suppresses progress logs written to stderr
+- Keeps stdout machine-readable for automation
+- Errors are emitted as JSON: `{ "error": "..." }`
+
+Example:
+```bash
+node scripts/query-database.js <db-id> --limit 5 --json
+```
+
 ## Core Operations
 
 ### 1. Search Pages and Databases
@@ -64,7 +78,7 @@ Bi-directional sync between markdown files and Notion pages, plus database manag
 Search across your Notion workspace by title or content.
 
 ```bash
-node scripts/search-notion.js "<query>" [--filter page|database] [--limit 10]
+node scripts/search-notion.js "<query>" [--filter page|database] [--limit 10] [--json]
 ```
 
 **Examples:**
@@ -97,7 +111,7 @@ node scripts/search-notion.js "AI" --limit 5
 Query database contents with advanced filters and sorting.
 
 ```bash
-node scripts/query-database.js <database-id> [--filter <json>] [--sort <json>] [--limit 10]
+node scripts/query-database.js <database-id> [--filter <json>] [--sort <json>] [--limit 10] [--json]
 ```
 
 **Examples:**
@@ -135,7 +149,7 @@ node scripts/query-database.js <db-id> \
 Update properties for database pages (status, tags, dates, etc.).
 
 ```bash
-node scripts/update-page-properties.js <page-id> <property-name> <value> [--type <type>]
+node scripts/update-page-properties.js <page-id> <property-name> <value> [--type <type>] [--json]
 ```
 
 **Supported types:** select, multi_select, checkbox, number, url, email, date, rich_text
@@ -198,7 +212,7 @@ Push markdown content to Notion with full formatting support.
 node scripts/md-to-notion.js \
   "<markdown-file-path>" \
   "<notion-parent-page-id>" \
-  "<page-title>"
+  "<page-title>" [--json]
 ```
 
 **Example:**
@@ -238,7 +252,7 @@ Parsed 294 blocks from markdown
 Pull Notion page content and convert to markdown.
 
 ```bash
-node scripts/notion-to-md.js <page-id> [output-file]
+node scripts/notion-to-md.js <page-id> [output-file] [--json]
 ```
 
 **Example:**
@@ -258,7 +272,7 @@ node scripts/notion-to-md.js \
 Monitor Notion pages for edits and compare with local markdown files.
 
 ```bash
-node scripts/watch-notion.js "<page-id>" "<local-markdown-path>" [--state-file <path>]
+node scripts/watch-notion.js "<page-id>" "<local-markdown-path>" [--state-file <path>] [--json]
 ```
 
 **Example:**
@@ -314,7 +328,7 @@ The script outputs JSON — pipe it to any notification system when `hasChanges`
 Add a markdown file as a new page in any Notion database.
 
 ```bash
-node scripts/add-to-database.js <database-id> "<page-title>" <markdown-file-path>
+node scripts/add-to-database.js <database-id> "<page-title>" <markdown-file-path> [--json]
 ```
 
 **Examples:**
@@ -349,7 +363,7 @@ node scripts/add-to-database.js \
 #### Inspect Database Schema
 
 ```bash
-node scripts/get-database-schema.js <database-id>
+node scripts/get-database-schema.js <database-id> [--json]
 ```
 
 **Example output:**
@@ -374,7 +388,7 @@ node scripts/get-database-schema.js <database-id>
 #### Archive Pages
 
 ```bash
-node scripts/delete-notion-page.js <page-id>
+node scripts/delete-notion-page.js <page-id> [--json]
 ```
 
 **Note:** This archives the page (sets `archived: true`), not permanent deletion.

@@ -10,6 +10,8 @@ const {
   notionRequest,
   extractTitle,
   stripTokenArg,
+  hasJsonFlag,
+  log,
 } = require('./notion-utils.js');
 
 checkApiKey();
@@ -21,7 +23,7 @@ async function searchNotion(query, filter = null, pageSize = 10) {
     payload.filter = { property: 'object', value: filter };
   }
 
-  console.error(`Searching for: "${query}"${filter ? ` (filter: ${filter})` : ''}`);
+  log(`Searching for: "${query}"${filter ? ` (filter: ${filter})` : ''}`);
 
   const result = await notionRequest('/v1/search', 'POST', payload);
 
@@ -44,6 +46,7 @@ async function main() {
     console.log('Options:');
     console.log('  --filter <page|database>  Filter by object type');
     console.log('  --limit <number>          Maximum results (default: 10)');
+    console.log('  --json                    Output JSON only (suppress stderr logs)');
     console.log('');
     console.log('Examples:');
     console.log('  search-notion.js "newsletter"');
@@ -64,9 +67,13 @@ async function main() {
   try {
     const results = await searchNotion(query, filter, limit);
     console.log(JSON.stringify(results, null, 2));
-    console.error(`\n✓ Found ${results.length} result(s)`);
+    log(`\n✓ Found ${results.length} result(s)`);
   } catch (error) {
-    console.error('Error:', error.message);
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: error.message }, null, 2));
+    } else {
+      console.error('Error:', error.message);
+    }
     process.exit(1);
   }
 }

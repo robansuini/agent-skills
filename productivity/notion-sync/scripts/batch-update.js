@@ -16,6 +16,8 @@ const {
   formatPropertyValue,
   extractPropertyValue,
   stripTokenArg,
+  hasJsonFlag,
+  log,
 } = require('./notion-utils.js');
 
 const DEFAULT_LIMIT = 100;
@@ -92,14 +94,14 @@ function parseBatchUpdateArgs(args) {
 }
 
 async function queryMatchingPages(databaseId, filter, limit) {
-  console.error(`Fetching database info: ${databaseId}`);
+  log(`Fetching database info: ${databaseId}`);
   const dbInfo = await notionRequest(`/v1/databases/${databaseId}`, 'GET');
 
   const dataSourceId = dbInfo.data_sources && dbInfo.data_sources.length > 0
     ? dbInfo.data_sources[0].id
     : databaseId;
 
-  console.error(`Querying data source: ${dataSourceId}`);
+  log(`Querying data source: ${dataSourceId}`);
 
   let results = [];
   let cursor = null;
@@ -167,12 +169,12 @@ async function runBatchUpdate(parsed) {
       : null;
 
     if (parsed.dryRun) {
-      console.error(`Would update page ${i + 1}/${total}: ${page.id} (current: ${JSON.stringify(currentValue)})`);
+      log(`Would update page ${i + 1}/${total}: ${page.id} (current: ${JSON.stringify(currentValue)})`);
       results.push({ id: page.id, url: page.url, updated: false });
       continue;
     }
 
-    console.error(`Updating page ${i + 1}/${total}...`);
+    log(`Updating page ${i + 1}/${total}...`);
     const updated = await updatePage(page.id, parsed.propertyName, parsed.value, parsed.propertyType);
     results.push(updated);
 
@@ -182,9 +184,9 @@ async function runBatchUpdate(parsed) {
   }
 
   if (parsed.dryRun) {
-    console.error(`✓ Dry run: would update ${total} pages`);
+    log(`✓ Dry run: would update ${total} pages`);
   } else {
-    console.error(`✓ Updated ${total} pages`);
+    log(`✓ Updated ${total} pages`);
   }
 
   return results;
@@ -192,8 +194,8 @@ async function runBatchUpdate(parsed) {
 
 function printHelp() {
   console.log('Usage:');
-  console.log('  batch-update.js <database-id> <property-name> <value> --filter <json> [--type <type>] [--dry-run] [--limit 100]');
-  console.log('  batch-update.js --stdin <property-name> <value> [--type <type>] [--dry-run] [--limit 100]');
+  console.log('  batch-update.js <database-id> <property-name> <value> --filter <json> [--type <type>] [--dry-run] [--limit 100] [--json]');
+  console.log('  batch-update.js --stdin <property-name> <value> [--type <type>] [--dry-run] [--limit 100] [--json]');
   console.log('');
   console.log('Supported types: select, multi_select, checkbox, number, url, email, date, rich_text');
 }
@@ -210,7 +212,11 @@ async function main() {
   try {
     parsed = parseBatchUpdateArgs(args);
   } catch (error) {
-    console.error('Error:', error.message);
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: error.message }, null, 2));
+    } else {
+      log(`Error: ${error.message}`);
+    }
     process.exit(1);
   }
 
@@ -228,7 +234,11 @@ async function main() {
     const results = await runBatchUpdate(parsed);
     console.log(JSON.stringify(results, null, 2));
   } catch (error) {
-    console.error('Error:', error.message);
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: error.message }, null, 2));
+    } else {
+      log(`Error: ${error.message}`);
+    }
     process.exit(1);
   }
 }

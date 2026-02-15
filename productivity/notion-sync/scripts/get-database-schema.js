@@ -5,7 +5,7 @@
  * Usage: get-database-schema.js <database-id>
  */
 
-const { checkApiKey, notionRequest, stripTokenArg } = require('./notion-utils.js');
+const { checkApiKey, notionRequest, stripTokenArg, hasJsonFlag } = require('./notion-utils.js');
 
 checkApiKey();
 
@@ -14,15 +14,19 @@ async function main() {
   const dbId = args[0];
 
   if (!dbId || dbId === '--help') {
-    console.error('Usage: get-database-schema.js <database-id>');
-    process.exit(1);
+    console.log('Usage: get-database-schema.js <database-id> [--json]');
+    process.exit(dbId === '--help' ? 0 : 1);
   }
 
   try {
     const db = await notionRequest(`/v1/databases/${dbId}`, 'GET');
     console.log(JSON.stringify(db, null, 2));
   } catch (error) {
-    console.error('Error:', error.message);
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: error.message }, null, 2));
+    } else {
+      console.error('Error:', error.message);
+    }
     process.exit(1);
   }
 }

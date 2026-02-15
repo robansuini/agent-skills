@@ -16,6 +16,8 @@ const {
   blocksToMarkdown,
   stripTokenArg,
   expandHomePath,
+  hasJsonFlag,
+  log,
 } = require('./notion-utils.js');
 
 // State file location — relative to the workspace, not the script
@@ -128,7 +130,12 @@ async function main() {
   const { pageId, localPath, stateFile } = parseWatchArgs(args);
 
   if (!pageId || !localPath) {
-    console.error('Usage: watch-notion.js [--state-file <path>] <page-id> <local-path>');
+    const usage = 'Usage: watch-notion.js [--state-file <path>] <page-id> <local-path> [--json]';
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: usage }, null, 2));
+    } else {
+      log(usage);
+    }
     process.exit(1);
   }
 
@@ -140,7 +147,11 @@ async function main() {
 if (require.main === module) {
   checkApiKey();
   main().catch(err => {
-    console.error('Fatal error:', err);
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: err.message || String(err) }, null, 2));
+    } else {
+      log(`Fatal error: ${err}`);
+    }
     process.exit(1);
   });
 } else {
