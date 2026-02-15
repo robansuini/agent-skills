@@ -13,6 +13,8 @@ const {
   getAllBlocks,
   blocksToMarkdown,
   stripTokenArg,
+  hasJsonFlag,
+  log,
 } = require('./notion-utils.js');
 
 /**
@@ -27,11 +29,11 @@ async function main() {
   const args = stripTokenArg(process.argv.slice(2));
 
   if (args.length < 1 || args[0] === '--help') {
-    console.error('Usage: notion-to-md.js <page-id> [output-file]');
-    console.error('');
-    console.error('Example:');
-    console.error('  notion-to-md.js "abc123..." newsletter.md');
-    process.exit(1);
+    console.log('Usage: notion-to-md.js <page-id> [output-file] [--json]');
+    console.log('');
+    console.log('Example:');
+    console.log('  notion-to-md.js "abc123..." newsletter.md --json');
+    process.exit(args[0] === '--help' ? 0 : 1);
   }
 
   const pageId = normalizeId(args[0]);
@@ -47,14 +49,32 @@ async function main() {
     if (outputFile) {
       const fs = require('fs');
       fs.writeFileSync(outputFile, `# ${title}\n\n${markdown}`, 'utf8');
-      console.log(`✓ Saved to ${outputFile}`);
-    } else {
+      if (!hasJsonFlag()) {
+        log(`✓ Saved to ${outputFile}`);
+      }
+    } else if (!hasJsonFlag()) {
       console.log(markdown);
     }
 
-    return { title, lastEditedTime: page.last_edited_time, markdown, blockCount: blocks.length };
+    const result = {
+      markdown,
+      pageId,
+      title,
+      lastEditedTime: page.last_edited_time,
+      blockCount: blocks.length,
+    };
+
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ markdown, pageId }, null, 2));
+    }
+
+    return result;
   } catch (error) {
-    console.error('Error:', error.message);
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: error.message }, null, 2));
+    } else {
+      log(`Error: ${error.message}`);
+    }
     process.exit(1);
   }
 }

@@ -10,12 +10,14 @@ const {
   notionRequest,
   extractPropertyValue,
   stripTokenArg,
+  hasJsonFlag,
+  log,
 } = require('./notion-utils.js');
 
 checkApiKey();
 
 async function queryDatabase(databaseId, filter = null, sorts = null, pageSize = 10) {
-  console.error(`Fetching database info: ${databaseId}`);
+  log(`Fetching database info: ${databaseId}`);
   const dbInfo = await notionRequest(`/v1/databases/${databaseId}`, 'GET');
 
   // Use data_source_id if available (Notion API 2025-09-03)
@@ -23,16 +25,16 @@ async function queryDatabase(databaseId, filter = null, sorts = null, pageSize =
     ? dbInfo.data_sources[0].id
     : databaseId;
 
-  console.error(`Querying data source: ${dataSourceId}`);
+  log(`Querying data source: ${dataSourceId}`);
 
   const payload = { page_size: pageSize };
   if (filter) {
     payload.filter = filter;
-    console.error('Filter:', JSON.stringify(filter, null, 2));
+    log(`Filter: ${JSON.stringify(filter, null, 2)}`);
   }
   if (sorts) {
     payload.sorts = sorts;
-    console.error('Sort:', JSON.stringify(sorts, null, 2));
+    log(`Sort: ${JSON.stringify(sorts, null, 2)}`);
   }
 
   const result = await notionRequest(`/v1/data_sources/${dataSourceId}/query`, 'POST', payload);
@@ -61,6 +63,7 @@ async function main() {
     console.log('  --filter <json>  Filter expression (JSON)');
     console.log('  --sort <json>    Sort expression (JSON)');
     console.log('  --limit <num>    Maximum results (default: 10)');
+    console.log('  --json           Output JSON only (suppress stderr logs)');
     console.log('');
     console.log('Examples:');
     console.log('  query-database.js <db-id>');
@@ -83,9 +86,13 @@ async function main() {
   try {
     const results = await queryDatabase(databaseId, filter, sorts, limit);
     console.log(JSON.stringify(results, null, 2));
-    console.error(`\n✓ Found ${results.length} result(s)`);
+    log(`\n✓ Found ${results.length} result(s)`);
   } catch (error) {
-    console.error('Error:', error.message);
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: error.message }, null, 2));
+    } else {
+      console.error('Error:', error.message);
+    }
     process.exit(1);
   }
 }

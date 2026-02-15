@@ -5,7 +5,7 @@
  * Usage: delete-notion-page.js <page-id>
  */
 
-const { checkApiKey, notionRequest, stripTokenArg } = require('./notion-utils.js');
+const { checkApiKey, notionRequest, stripTokenArg, hasJsonFlag, log } = require('./notion-utils.js');
 
 checkApiKey();
 
@@ -14,20 +14,35 @@ async function main() {
   const pageId = args[0];
 
   if (!pageId || pageId === '--help') {
-    console.error('Usage: delete-notion-page.js <page-id>');
-    console.error('');
-    console.error('Note: This archives the page (sets archived: true), not permanent deletion.');
-    process.exit(1);
+    console.log('Usage: delete-notion-page.js <page-id> [--json]');
+    console.log('');
+    console.log('Note: This archives the page (sets archived: true), not permanent deletion.');
+    process.exit(pageId === '--help' ? 0 : 1);
   }
 
   try {
-    console.log(`Archiving page: ${pageId}`);
+    log(`Archiving page: ${pageId}`);
     const result = await notionRequest(`/v1/pages/${pageId}`, 'PATCH', { archived: true });
-    console.log('✓ Page archived successfully');
-    console.log(`  Page ID: ${result.id}`);
-    console.log(`  Archived: ${result.archived}`);
+
+    const output = {
+      id: result.id,
+      archived: result.archived,
+      url: result.url,
+    };
+
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify(output, null, 2));
+    } else {
+      console.log('✓ Page archived successfully');
+      console.log(`  Page ID: ${result.id}`);
+      console.log(`  Archived: ${result.archived}`);
+    }
   } catch (error) {
-    console.error('Error:', error.message);
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: error.message }, null, 2));
+    } else {
+      log(`Error: ${error.message}`);
+    }
     process.exit(1);
   }
 }

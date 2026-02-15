@@ -108,19 +108,24 @@ function getApiKey() {
  */
 function checkApiKey() {
   if (!getApiKey()) {
-    console.error('Error: No Notion API token provided');
-    console.error('');
-    console.error('No Notion API token found. Provide one via: --token-file <path>, --token-stdin (pipe), or NOTION_API_KEY env var.');
-    console.error('');
-    console.error('Usage (pick one):');
-    console.error('  node scripts/<script>.js --token-file ~/.notion-token [args]');
-    console.error('  echo "$NOTION_API_KEY" | node scripts/<script>.js --token-stdin [args]');
-    console.error('  NOTION_API_KEY=ntn_... node scripts/<script>.js [args]');
-    console.error('');
-    console.error('Default: if ~/.notion-token exists, it is used automatically.');
-    console.error('');
-    console.error('Credentials are never passed as bare CLI arguments (security best practice).');
-    console.error('Create an integration at https://www.notion.so/my-integrations');
+    const message = 'No Notion API token found. Provide one via: --token-file <path>, --token-stdin (pipe), or NOTION_API_KEY env var.';
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: message }, null, 2));
+    } else {
+      console.error('Error: No Notion API token provided');
+      console.error('');
+      console.error(message);
+      console.error('');
+      console.error('Usage (pick one):');
+      console.error('  node scripts/<script>.js --token-file ~/.notion-token [args]');
+      console.error('  echo "$NOTION_API_KEY" | node scripts/<script>.js --token-stdin [args]');
+      console.error('  NOTION_API_KEY=ntn_... node scripts/<script>.js [args]');
+      console.error('');
+      console.error('Default: if ~/.notion-token exists, it is used automatically.');
+      console.error('');
+      console.error('Credentials are never passed as bare CLI arguments (security best practice).');
+      console.error('Create an integration at https://www.notion.so/my-integrations');
+    }
     process.exit(1);
   }
 }
@@ -128,12 +133,22 @@ function checkApiKey() {
 /**
  * Strip token-related flags from an args array so scripts don't parse them as their own args
  */
+function hasJsonFlag() {
+  return process.argv.includes('--json');
+}
+
+function log(msg) {
+  if (!hasJsonFlag()) console.error(msg);
+}
+
 function stripTokenArg(args) {
   const result = [];
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--token-file' && i + 1 < args.length) {
       i++; // skip value
     } else if (args[i] === '--token-stdin') {
+      // skip flag only (no value)
+    } else if (args[i] === '--json') {
       // skip flag only (no value)
     } else {
       result.push(args[i]);
@@ -647,6 +662,8 @@ module.exports = {
   resolveToken,
   checkApiKey,
   stripTokenArg,
+  hasJsonFlag,
+  log,
   expandHomePath,
   wrapNetworkError,
 

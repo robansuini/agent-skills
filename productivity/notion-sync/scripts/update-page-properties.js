@@ -10,6 +10,8 @@ const {
   notionRequest,
   formatPropertyValue,
   stripTokenArg,
+  hasJsonFlag,
+  log,
 } = require('./notion-utils.js');
 
 checkApiKey();
@@ -18,9 +20,9 @@ async function updatePageProperties(pageId, propertyName, value, propertyType = 
   const properties = {};
   properties[propertyName] = formatPropertyValue(propertyType, value);
 
-  console.error(`Updating page: ${pageId}`);
-  console.error(`Property: ${propertyName} (${propertyType})`);
-  console.error(`Value: ${value}`);
+  log(`Updating page: ${pageId}`);
+  log(`Property: ${propertyName} (${propertyType})`);
+  log(`Value: ${value}`);
 
   const result = await notionRequest(`/v1/pages/${pageId}`, 'PATCH', { properties });
 
@@ -35,7 +37,7 @@ async function main() {
   const args = stripTokenArg(process.argv.slice(2));
 
   if (args.length < 3 || args[0] === '--help') {
-    console.log('Usage: update-page-properties.js <page-id> <property-name> <value> [--type <type>]');
+    console.log('Usage: update-page-properties.js <page-id> <property-name> <value> [--type <type>] [--json]');
     console.log('');
     console.log('Supported types: select, multi_select, checkbox, number, url, email, date, rich_text');
     console.log('');
@@ -43,7 +45,7 @@ async function main() {
     console.log('  update-page-properties.js <id> Status Complete --type select');
     console.log('  update-page-properties.js <id> Tags "AI,Leadership" --type multi_select');
     console.log('  update-page-properties.js <id> Published true --type checkbox');
-    console.log('  update-page-properties.js <id> "Publish Date" 2024-02-01 --type date');
+    console.log('  update-page-properties.js <id> "Publish Date" 2024-02-01 --type date --json');
     process.exit(0);
   }
 
@@ -59,10 +61,14 @@ async function main() {
   try {
     const result = await updatePageProperties(pageId, propertyName, value, propertyType);
     console.log(JSON.stringify(result, null, 2));
-    console.error(`\n✓ Page updated successfully`);
-    console.error(`  URL: ${result.url}`);
+    log('\n✓ Page updated successfully');
+    log(`  URL: ${result.url}`);
   } catch (error) {
-    console.error('Error:', error.message);
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: error.message }, null, 2));
+    } else {
+      console.error('Error:', error.message);
+    }
     process.exit(1);
   }
 }
