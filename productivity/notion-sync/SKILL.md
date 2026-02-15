@@ -161,7 +161,36 @@ node scripts/update-page-properties.js <page-id> "Source URL" "https://example.c
 node scripts/update-page-properties.js <page-id> "Word Count" 1200 --type number
 ```
 
-### 4. Markdown → Notion Sync
+### 4. Batch Update
+
+Batch update a single property across multiple pages in one command.
+
+**Mode 1 — Query + Update:**
+```bash
+node scripts/batch-update.js <database-id> <property-name> <value> --filter '<json>' [--type select] [--dry-run] [--limit 100]
+```
+
+**Example:**
+```bash
+node scripts/batch-update.js <db-id> Status Review \
+  --filter '{"property":"Status","select":{"equals":"Draft"}}' \
+  --type select
+```
+
+**Mode 2 — Page IDs from stdin:**
+```bash
+echo "page-id-1\npage-id-2\npage-id-3" | \
+  node scripts/batch-update.js --stdin <property-name> <value> [--type select] [--dry-run]
+```
+
+**Features:**
+- `--dry-run`: prints pages that would be updated (with current property value) without writing
+- `--limit <n>`: max pages to process (default `100`)
+- Pagination in query mode (`has_more`/`next_cursor`) up to limit
+- Rate-limit friendly updates (300ms between page updates)
+- Progress and summary on stderr, JSON result array on stdout
+
+### 5. Markdown → Notion Sync
 
 Push markdown content to Notion with full formatting support.
 
@@ -204,7 +233,7 @@ Parsed 294 blocks from markdown
 ✅ Successfully created Notion page!
 ```
 
-### 5. Notion → Markdown Sync
+### 6. Notion → Markdown Sync
 
 Pull Notion page content and convert to markdown.
 
@@ -224,7 +253,7 @@ node scripts/notion-to-md.js \
 - Preserves formatting (headings, lists, code, quotes)
 - Optional file output (writes to file or stdout)
 
-### 6. Change Detection & Monitoring
+### 7. Change Detection & Monitoring
 
 Monitor Notion pages for edits and compare with local markdown files.
 
@@ -278,7 +307,7 @@ Default state schema:
 
 The script outputs JSON — pipe it to any notification system when `hasChanges` is `true`.
 
-### 7. Database Management
+### 8. Database Management
 
 #### Add Markdown Content to Database
 
@@ -428,6 +457,7 @@ Or use the 32-char format: `abc123examplepageid456def` (hyphens optional)
 - **search-notion.js** - Search pages and databases by query
 - **query-database.js** - Query databases with filters and sorting
 - **update-page-properties.js** - Update database page properties
+- **batch-update.js** - Batch update one property across many pages (query or stdin IDs)
 
 **Database Management:**
 - **add-to-database.js** - Add markdown files as database pages
