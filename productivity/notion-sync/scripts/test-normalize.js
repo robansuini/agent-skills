@@ -163,6 +163,31 @@ console.log('\n📋 parseMarkdownRichText (markdown → Notion rich_text)');
   assert(!result[0].annotations, 'Plain: no annotations');
 }
 
+{
+  const longText = 'x'.repeat(5000);
+  const result = parseMarkdownRichText(longText);
+  assertEqual(result.length, 3, 'Long plain markdown text: split into 3 chunks');
+  assertEqual(result[0].text.content.length, 2000, 'Long plain: first chunk 2000 chars');
+  assertEqual(result[1].text.content.length, 2000, 'Long plain: second chunk 2000 chars');
+  assertEqual(result[2].text.content.length, 1000, 'Long plain: third chunk 1000 chars');
+}
+
+{
+  const longBoldContent = 'b'.repeat(4500);
+  const result = parseMarkdownRichText(`**${longBoldContent}**`);
+  assertEqual(result.length, 3, 'Long bold markdown text: split into 3 chunks');
+  assertEqual(result.every(item => item.annotations && item.annotations.bold), true, 'Long bold: bold annotation preserved across chunks');
+  assertEqual(result.map(item => item.text.content).join(''), longBoldContent, 'Long bold: content preserved across chunks');
+}
+
+{
+  const longLinkText = 'l'.repeat(4200);
+  const result = parseMarkdownRichText(`[${longLinkText}](https://example.com)`);
+  assertEqual(result.length, 3, 'Long link markdown text: split into 3 chunks');
+  assertEqual(result.every(item => item.text.link && item.text.link.url === 'https://example.com'), true, 'Long link: URL preserved across chunks');
+  assertEqual(result.map(item => item.text.content).join(''), longLinkText, 'Long link: content preserved across chunks');
+}
+
 // --- parseMarkdownToBlocks ---
 console.log('\n📋 parseMarkdownToBlocks');
 
