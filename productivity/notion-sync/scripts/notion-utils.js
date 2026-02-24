@@ -390,6 +390,25 @@ function parseRichText(text) {
 /**
  * Parse markdown-formatted text into Notion rich_text with annotations
  */
+function pushRichTextChunked(richText, item, maxLength = 2000) {
+  const content = item?.text?.content || '';
+
+  if (content.length === 0) {
+    richText.push(item);
+    return;
+  }
+
+  for (let i = 0; i < content.length; i += maxLength) {
+    richText.push({
+      ...item,
+      text: {
+        ...item.text,
+        content: content.substring(i, i + maxLength)
+      }
+    });
+  }
+}
+
 function parseMarkdownRichText(text) {
   const richText = [];
   const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|\[.*?\]\(.*?\))/);
@@ -398,13 +417,13 @@ function parseMarkdownRichText(text) {
     if (!part) continue;
 
     if (part.startsWith('**') && part.endsWith('**')) {
-      richText.push({
+      pushRichTextChunked(richText, {
         type: 'text',
         text: { content: part.slice(2, -2) },
         annotations: { bold: true }
       });
     } else if (part.startsWith('*') && part.endsWith('*') && !part.startsWith('**')) {
-      richText.push({
+      pushRichTextChunked(richText, {
         type: 'text',
         text: { content: part.slice(1, -1) },
         annotations: { italic: true }
@@ -412,12 +431,12 @@ function parseMarkdownRichText(text) {
     } else {
       const linkMatch = part.match(/\[(.*?)\]\((.*?)\)/);
       if (linkMatch) {
-        richText.push({
+        pushRichTextChunked(richText, {
           type: 'text',
           text: { content: linkMatch[1], link: { url: linkMatch[2] } }
         });
       } else {
-        richText.push({
+        pushRichTextChunked(richText, {
           type: 'text',
           text: { content: part }
         });
