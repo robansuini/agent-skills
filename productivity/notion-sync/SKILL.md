@@ -235,6 +235,7 @@ node scripts/md-to-notion.js \
 **Features:**
 - Batched uploads (100 blocks per request)
 - Automatic rate limiting (350ms between batches)
+- Rich text is automatically chunked to Notion's 2000-character limit (including bold/italic/link spans)
 - Returns Notion page URL and ID
 
 **Output:**
