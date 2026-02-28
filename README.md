@@ -26,27 +26,27 @@ Bi-directional sync and management for Notion pages and databases. Enables colla
 - **Database management**: Search, query, and update database pages with filters and sorting
 - **Property updates**: Set status, tags, dates, and other database properties programmatically
 
-**Example workflows:**
+**Example workflows** (run from repository root):
 
 ```bash
 # Push draft to Notion for collaborative editing
-node scripts/md-to-notion.js "draft.md" "<parent-id>" "Draft Title"
+node productivity/notion-sync/scripts/md-to-notion.js "draft.md" "<parent-id>" "Draft Title"
 
 # Monitor for changes
-node scripts/watch-notion.js
+node productivity/notion-sync/scripts/watch-notion.js
 
 # Pull updates back
-node scripts/notion-to-md.js "<page-id>" "draft-updated.md"
+node productivity/notion-sync/scripts/notion-to-md.js "<page-id>" "draft-updated.md"
 
 # Search workspace
-node scripts/search-notion.js "newsletter"
+node productivity/notion-sync/scripts/search-notion.js "newsletter"
 
 # Query database with filters
-node scripts/query-database.js "<db-id>" \
+node productivity/notion-sync/scripts/query-database.js "<db-id>" \
   --filter '{"property": "Status", "select": {"equals": "Complete"}}'
 
 # Update page properties
-node scripts/update-page-properties.js "<page-id>" Status "Published" --type select
+node productivity/notion-sync/scripts/update-page-properties.js "<page-id>" Status "Published" --type select
 ```
 
 **Supported formatting:**
@@ -118,8 +118,8 @@ skill-name/
 
 1. Go to https://www.notion.so/my-integrations
 2. Create a new integration
-3. Copy the "Internal Integration Token" (starts with `secret_`)
-4. Store it securely in your environment:
+3. Copy the "Internal Integration Token"
+4. Store it securely in your environment (or use `--token-file` / `--token-stdin` in scripts):
    ```bash
    export NOTION_API_KEY="your-token-here"
    ```
