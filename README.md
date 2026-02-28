@@ -26,27 +26,30 @@ Bi-directional sync and management for Notion pages and databases. Enables colla
 - **Database management**: Search, query, and update database pages with filters and sorting
 - **Property updates**: Set status, tags, dates, and other database properties programmatically
 
-**Example workflows** (run from repository root):
+**Example workflows** (start from repository root):
 
 ```bash
+# Move into the notion-sync skill once
+cd productivity/notion-sync
+
 # Push draft to Notion for collaborative editing
-node productivity/notion-sync/scripts/md-to-notion.js "draft.md" "<parent-id>" "Draft Title"
+node scripts/md-to-notion.js "draft.md" "<parent-id>" "Draft Title"
 
 # Monitor for changes
-node productivity/notion-sync/scripts/watch-notion.js
+node scripts/watch-notion.js
 
 # Pull updates back
-node productivity/notion-sync/scripts/notion-to-md.js "<page-id>" "draft-updated.md"
+node scripts/notion-to-md.js "<page-id>" "draft-updated.md"
 
 # Search workspace
-node productivity/notion-sync/scripts/search-notion.js "newsletter"
+node scripts/search-notion.js "newsletter"
 
 # Query database with filters
-node productivity/notion-sync/scripts/query-database.js "<db-id>" \
+node scripts/query-database.js "<db-id>" \
   --filter '{"property": "Status", "select": {"equals": "Complete"}}'
 
 # Update page properties
-node productivity/notion-sync/scripts/update-page-properties.js "<page-id>" Status "Published" --type select
+node scripts/update-page-properties.js "<page-id>" Status "Published" --type select
 ```
 
 **Supported formatting:**
