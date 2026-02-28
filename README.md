@@ -26,9 +26,12 @@ Bi-directional sync and management for Notion pages and databases. Enables colla
 - **Database management**: Search, query, and update database pages with filters and sorting
 - **Property updates**: Set status, tags, dates, and other database properties programmatically
 
-**Example workflows:**
+**Example workflows** (start from repository root):
 
 ```bash
+# Move into the notion-sync skill once
+cd productivity/notion-sync
+
 # Push draft to Notion for collaborative editing
 node scripts/md-to-notion.js "draft.md" "<parent-id>" "Draft Title"
 
@@ -118,8 +121,8 @@ skill-name/
 
 1. Go to https://www.notion.so/my-integrations
 2. Create a new integration
-3. Copy the "Internal Integration Token" (starts with `secret_`)
-4. Store it securely in your environment:
+3. Copy the "Internal Integration Token"
+4. Store it securely in your environment (or use `--token-file` / `--token-stdin` in scripts):
    ```bash
    export NOTION_API_KEY="your-token-here"
    ```
