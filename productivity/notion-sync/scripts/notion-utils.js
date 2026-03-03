@@ -487,11 +487,14 @@ function parseMarkdownToBlocks(markdown, options = {}) {
         codeLanguage = line.slice(3).trim() || 'plain text';
         codeContent = [];
       } else {
+        const codeText = codeContent.join('\n');
         blocks.push({
           type: 'code',
           code: {
             language: codeLanguage,
-            rich_text: [{ type: 'text', text: { content: codeContent.join('\n') } }]
+            rich_text: codeText
+              ? parseRichText(codeText)
+              : [{ type: 'text', text: { content: '' } }]
           }
         });
         inCodeBlock = false;
