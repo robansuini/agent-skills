@@ -235,6 +235,18 @@ console.log('\n📋 parseMarkdownToBlocks');
 }
 
 {
+  const longCode = 'x'.repeat(4500);
+  const blocks = parseMarkdownToBlocks(`\`\`\`\n${longCode}\n\`\`\``);
+  assertEqual(blocks.length, 1, 'Long code block: one block');
+  assertEqual(blocks[0].type, 'code', 'Long code block: correct type');
+  assertEqual(blocks[0].code.rich_text.length, 3, 'Long code block: chunked to 3 rich_text items');
+  assertEqual(blocks[0].code.rich_text[0].text.content.length, 2000, 'Long code block: first chunk 2000 chars');
+  assertEqual(blocks[0].code.rich_text[1].text.content.length, 2000, 'Long code block: second chunk 2000 chars');
+  assertEqual(blocks[0].code.rich_text[2].text.content.length, 500, 'Long code block: final chunk remainder');
+  assertEqual(blocks[0].code.rich_text.map(chunk => chunk.text.content).join(''), longCode, 'Long code block: content preserved');
+}
+
+{
   const md = '# Title\n\nSome paragraph text.\n\n- Item 1\n- Item 2\n\n---\n\n## Section\n\n```js\ncode\n```';
   const blocks = parseMarkdownToBlocks(md);
   assertEqual(blocks.length, 7, 'Complex doc: 7 blocks (h1, para, 2 bullets, divider, h2, code)');
