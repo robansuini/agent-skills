@@ -107,6 +107,11 @@ function getApiKey() {
  * Check if a Notion API token was provided, exit with helpful message if not
  */
 function checkApiKey() {
+  // Allow help output without requiring credentials.
+  if (hasHelpFlag()) {
+    return;
+  }
+
   if (!getApiKey()) {
     const message = 'No Notion API token found. Provide one via: --token-file <path>, --token-stdin (pipe), or NOTION_API_KEY env var.';
     if (hasJsonFlag()) {
@@ -135,6 +140,10 @@ function checkApiKey() {
  */
 function hasJsonFlag() {
   return process.argv.includes('--json');
+}
+
+function hasHelpFlag() {
+  return process.argv.includes('--help') || process.argv.includes('-h');
 }
 
 function log(msg) {
@@ -685,6 +694,7 @@ module.exports = {
   checkApiKey,
   stripTokenArg,
   hasJsonFlag,
+  hasHelpFlag,
   log,
   expandHomePath,
   wrapNetworkError,

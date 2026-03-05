@@ -25,6 +25,7 @@ const {
   createDetailedError,
   stripTokenArg,
   hasJsonFlag,
+  hasHelpFlag,
   log,
   expandHomePath,
   resolveToken,
@@ -566,6 +567,20 @@ console.log('\n📋 hasJsonFlag');
   assertEqual(hasJsonFlag(), true, 'Returns true when --json is present');
   process.argv = ['node', 'script.js', '--limit', '5'];
   assertEqual(hasJsonFlag(), false, 'Returns false when --json is absent');
+  process.argv = originalArgv;
+}
+
+// --- hasHelpFlag ---
+console.log('\n📋 hasHelpFlag');
+
+{
+  const originalArgv = process.argv.slice();
+  process.argv = ['node', 'script.js', '--help'];
+  assertEqual(hasHelpFlag(), true, 'Returns true when --help is present');
+  process.argv = ['node', 'script.js', '-h'];
+  assertEqual(hasHelpFlag(), true, 'Returns true when -h is present');
+  process.argv = ['node', 'script.js', '--limit', '5'];
+  assertEqual(hasHelpFlag(), false, 'Returns false when help flags are absent');
   process.argv = originalArgv;
 }
 
