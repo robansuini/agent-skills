@@ -17,6 +17,7 @@ const {
   stripTokenArg,
   expandHomePath,
   hasJsonFlag,
+  hasHelpFlag,
   log,
 } = require('./notion-utils.js');
 
@@ -129,14 +130,14 @@ async function main() {
   const args = stripTokenArg(process.argv.slice(2));
   const { pageId, localPath, stateFile } = parseWatchArgs(args);
 
-  if (!pageId || !localPath) {
+  if (hasHelpFlag() || !pageId || !localPath) {
     const usage = 'Usage: watch-notion.js [--state-file <path>] <page-id> <local-path> [--json]';
     if (hasJsonFlag()) {
-      console.log(JSON.stringify({ error: usage }, null, 2));
+      console.log(JSON.stringify(hasHelpFlag() ? { usage } : { error: usage }, null, 2));
     } else {
       log(usage);
     }
-    process.exit(1);
+    process.exit(hasHelpFlag() ? 0 : 1);
   }
 
   const result = await checkPage(pageId, localPath, stateFile);
