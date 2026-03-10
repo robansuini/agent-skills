@@ -60,6 +60,44 @@ node scripts/update-page-properties.js "<page-id>" Status "Published" --type sel
 - Code blocks with syntax highlighting
 - Horizontal dividers
 
+### Leadership
+
+#### leadership-prompts
+
+Curated library of 25+ practical prompts for engineering leaders covering 1-on-1 prep, team health, retrospectives, technical strategy, hiring, career development, and stakeholder communication.
+
+**Use when:**
+- Preparing for non-routine 1-on-1s or difficult feedback conversations
+- Running post-incident retrospectives with clear follow-through
+- Planning quarterly technical strategy or architecture direction
+- Structuring hiring and promotion decisions
+- Writing concise, high-signal stakeholder updates
+
+**Key features:**
+- **Prompt library**: Battle-tested prompts with real-world leadership context
+- **Fast discovery CLI**: List categories, search by keyword, and fetch random prompts
+- **Structured outputs**: Prompts are designed to produce meeting-ready artifacts
+- **Placeholder variables**: Easy adaptation to your exact team and scenario
+
+**Example workflows** (start from repository root):
+
+```bash
+# Move into the leadership-prompts skill once
+cd leadership/leadership-prompts
+
+# List prompt categories
+node scripts/leadership-prompts.js list
+
+# Search by keyword
+node scripts/leadership-prompts.js search "promotion"
+
+# Get one random prompt
+node scripts/leadership-prompts.js random
+
+# Show a specific prompt
+node scripts/leadership-prompts.js show career-dev-promotion
+```
+
 ## Installation
 
 ### For OpenClaw
@@ -101,6 +139,11 @@ agent-skills/
 │       ├── SKILL.md
 │       ├── scripts/
 │       └── references/
+├── leadership/
+│   └── leadership-prompts/
+│       ├── SKILL.md
+│       ├── prompts.json
+│       └── scripts/
 ├── development/     (coming soon)
 ├── communication/   (coming soon)
 └── research/        (coming soon)
