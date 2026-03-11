@@ -144,8 +144,62 @@ function hasHelpFlag() {
   return process.argv.includes('--help') || process.argv.includes('-h');
 }
 
+function hasUnsafePathFlag() {
+  return process.argv.includes('--allow-unsafe-paths');
+}
+
 function log(msg) {
   if (!hasJsonFlag()) console.error(msg);
+}
+
+function isPathInside(baseDir, targetPath) {
+  const relative = path.relative(baseDir, targetPath);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function resolveSafePath(inputPath, options = {}) {
+  const { mode = 'read' } = options;
+
+  if (!inputPath) {
+    throw new Error('Path is required');
+  }
+
+  const expanded = expandHomePath(inputPath);
+  const absolute = path.resolve(expanded);
+
+  let candidatePath = absolute;
+
+  if (fs.existsSync(absolute)) {
+    try {
+      candidatePath = fs.realpathSync(absolute);
+    } catch (_) {
+      candidatePath = absolute;
+    }
+  } else if (mode === 'write') {
+    const parentDir = path.dirname(absolute);
+    if (fs.existsSync(parentDir)) {
+      try {
+        candidatePath = path.join(fs.realpathSync(parentDir), path.basename(absolute));
+      } catch (_) {
+        candidatePath = absolute;
+      }
+    }
+  }
+
+  if (hasUnsafePathFlag()) {
+    return candidatePath;
+  }
+
+  const workspaceRoot = fs.realpathSync(process.cwd());
+  if (!isPathInside(workspaceRoot, candidatePath)) {
+    const action = mode === 'write' ? 'write to' : 'read from';
+    throw new Error(
+      `Refusing to ${action} path outside current workspace: ${inputPath}. ` +
+      'Use --allow-unsafe-paths to override intentionally.'
+    );
+  }
+
+  return candidatePath;
 }
 
 function stripTokenArg(args) {
@@ -156,6 +210,8 @@ function stripTokenArg(args) {
     } else if (args[i] === '--token-stdin') {
       // skip flag only (no value)
     } else if (args[i] === '--json') {
+      // skip flag only (no value)
+    } else if (args[i] === '--allow-unsafe-paths') {
       // skip flag only (no value)
     } else {
       result.push(args[i]);
@@ -693,7 +749,9 @@ module.exports = {
   stripTokenArg,
   hasJsonFlag,
   hasHelpFlag,
+  hasUnsafePathFlag,
   log,
+  resolveSafePath,
   expandHomePath,
   wrapNetworkError,
 

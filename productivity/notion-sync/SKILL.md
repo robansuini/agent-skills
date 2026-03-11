@@ -3,12 +3,13 @@ name: notion-sync
 description: Bi-directional sync and management for Notion pages and databases. Use when working with Notion workspaces for collaborative editing, research tracking, project management, or when you need to sync markdown files to/from Notion pages or monitor Notion pages for changes.
 homepage: https://github.com/robansuini/agent-skills
 repository: https://github.com/robansuini/agent-skills/tree/main/productivity/notion-sync
-license: MIT
+license: MIT-0
 metadata:
   clawdis:
     requires:
       env: [NOTION_API_KEY]
       bins: [node]
+    stateDirs: [memory]
 ---
 
 # Notion Sync
@@ -69,6 +70,23 @@ All scripts support a global `--json` flag.
 Example:
 ```bash
 node scripts/query-database.js <db-id> --limit 5 --json
+```
+
+## Path Safety Mode
+
+Scripts that read/write local files are restricted to the current working directory by default.
+
+- Prevents accidental reads/writes outside the intended workspace
+- Applies to: `md-to-notion.js`, `add-to-database.js`, `notion-to-md.js`, `watch-notion.js`
+- Override intentionally with `--allow-unsafe-paths`
+
+Examples:
+```bash
+# Default (safe): path must be inside current workspace
+node scripts/md-to-notion.js docs/draft.md <parent-id> "Draft"
+
+# Intentional override (outside workspace)
+node scripts/notion-to-md.js <page-id> ~/Downloads/export.md --allow-unsafe-paths
 ```
 
 ## Core Operations
@@ -212,7 +230,7 @@ Push markdown content to Notion with full formatting support.
 node scripts/md-to-notion.js \
   "<markdown-file-path>" \
   "<notion-parent-page-id>" \
-  "<page-title>" [--json]
+  "<page-title>" [--json] [--allow-unsafe-paths]
 ```
 
 **Example:**
@@ -253,7 +271,7 @@ Parsed 294 blocks from markdown
 Pull Notion page content and convert to markdown.
 
 ```bash
-node scripts/notion-to-md.js <page-id> [output-file] [--json]
+node scripts/notion-to-md.js <page-id> [output-file] [--json] [--allow-unsafe-paths]
 ```
 
 **Example:**
@@ -273,7 +291,7 @@ node scripts/notion-to-md.js \
 Monitor Notion pages for edits and compare with local markdown files.
 
 ```bash
-node scripts/watch-notion.js "<page-id>" "<local-markdown-path>" [--state-file <path>] [--json]
+node scripts/watch-notion.js "<page-id>" "<local-markdown-path>" [--state-file <path>] [--json] [--allow-unsafe-paths]
 ```
 
 **Example:**
@@ -329,7 +347,7 @@ The script outputs JSON — pipe it to any notification system when `hasChanges`
 Add a markdown file as a new page in any Notion database.
 
 ```bash
-node scripts/add-to-database.js <database-id> "<page-title>" <markdown-file-path> [--json]
+node scripts/add-to-database.js <database-id> "<page-title>" <markdown-file-path> [--json] [--allow-unsafe-paths]
 ```
 
 **Examples:**

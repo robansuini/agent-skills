@@ -15,6 +15,7 @@ const {
   stripTokenArg,
   hasJsonFlag,
   log,
+  resolveSafePath,
 } = require('./notion-utils.js');
 
 /**
@@ -29,7 +30,7 @@ async function main() {
   const args = stripTokenArg(process.argv.slice(2));
 
   if (args.length < 1 || args[0] === '--help') {
-    console.log('Usage: notion-to-md.js <page-id> [output-file] [--json]');
+    console.log('Usage: notion-to-md.js <page-id> [output-file] [--json] [--allow-unsafe-paths]');
     console.log('');
     console.log('Example:');
     console.log('  notion-to-md.js "abc123..." newsletter.md --json');
@@ -39,6 +40,17 @@ async function main() {
   const pageId = normalizeId(args[0]);
   const outputFile = args[1] || null;
 
+  let safeOutputFile = null;
+  if (outputFile) {
+    try {
+      safeOutputFile = resolveSafePath(outputFile, { mode: 'write' });
+    } catch (error) {
+      if (hasJsonFlag()) console.log(JSON.stringify({ error: error.message }, null, 2));
+      else log(`Error: ${error.message}`);
+      process.exit(1);
+    }
+  }
+
   try {
     const page = await getPage(pageId);
     const title = page.properties?.title?.title?.[0]?.plain_text || 'Untitled';
@@ -46,11 +58,11 @@ async function main() {
     const blocks = await getAllBlocks(pageId);
     const markdown = blocksToMarkdown(blocks);
 
-    if (outputFile) {
+    if (safeOutputFile) {
       const fs = require('fs');
-      fs.writeFileSync(outputFile, `# ${title}\n\n${markdown}`, 'utf8');
+      fs.writeFileSync(safeOutputFile, `# ${title}\n\n${markdown}`, 'utf8');
       if (!hasJsonFlag()) {
-        log(`✓ Saved to ${outputFile}`);
+        log(`✓ Saved to ${safeOutputFile}`);
       }
     } else if (!hasJsonFlag()) {
       console.log(markdown);

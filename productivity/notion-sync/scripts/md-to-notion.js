@@ -15,6 +15,7 @@ const {
   stripTokenArg,
   hasJsonFlag,
   log,
+  resolveSafePath,
 } = require('./notion-utils.js');
 
 checkApiKey();
@@ -23,7 +24,7 @@ async function main() {
   const args = stripTokenArg(process.argv.slice(2));
 
   if (args.length < 3 || args[0] === '--help') {
-    console.log('Usage: md-to-notion.js <markdown-file> <parent-page-id> <page-title> [--json]');
+    console.log('Usage: md-to-notion.js <markdown-file> <parent-page-id> <page-title> [--json] [--allow-unsafe-paths]');
     console.log('');
     console.log('Example:');
     console.log('  md-to-notion.js draft.md "abc123..." "Newsletter Draft" --json');
@@ -32,7 +33,16 @@ async function main() {
 
   const [mdFile, parentId, pageTitle] = args;
 
-  if (!fs.existsSync(mdFile)) {
+  let safeMdFile;
+  try {
+    safeMdFile = resolveSafePath(mdFile, { mode: 'read' });
+  } catch (error) {
+    if (hasJsonFlag()) console.log(JSON.stringify({ error: error.message }, null, 2));
+    else log(`Error: ${error.message}`);
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(safeMdFile)) {
     const message = `File not found: ${mdFile}`;
     if (hasJsonFlag()) console.log(JSON.stringify({ error: message }, null, 2));
     else log(`Error: ${message}`);
@@ -40,7 +50,7 @@ async function main() {
   }
 
   try {
-    const markdown = fs.readFileSync(mdFile, 'utf8');
+    const markdown = fs.readFileSync(safeMdFile, 'utf8');
     const blocks = parseMarkdownToBlocks(markdown, { richText: 'markdown' });
 
     log(`Parsed ${blocks.length} blocks from markdown`);

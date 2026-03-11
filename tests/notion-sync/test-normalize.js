@@ -5,12 +5,15 @@
  *         blocksToMarkdown, formatPropertyValue, extractPropertyValue, extractTitle,
  *         richTextToMarkdown, richTextToPlain, createDetailedError
  *
- * Run: node scripts/test-normalize.js
+ * Run: node tests/notion-sync/test-normalize.js
  */
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+
+const skillScriptsDir = path.resolve(__dirname, '../../productivity/notion-sync/scripts');
+
 const {
   normalizeId,
   parseRichText,
@@ -30,9 +33,9 @@ const {
   resolveToken,
   _resetTokenCache,
   wrapNetworkError,
-} = require('./notion-utils.js');
-const { parseWatchArgs } = require('./watch-notion.js');
-const { parseBatchUpdateArgs, DEFAULT_LIMIT } = require('./batch-update.js');
+} = require(path.join(skillScriptsDir, 'notion-utils.js'));
+const { parseWatchArgs } = require(path.join(skillScriptsDir, 'watch-notion.js'));
+const { parseBatchUpdateArgs, DEFAULT_LIMIT } = require(path.join(skillScriptsDir, 'batch-update.js'));
 
 let passed = 0;
 let failed = 0;
