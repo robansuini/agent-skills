@@ -15,10 +15,11 @@ const {
   getAllBlocks,
   blocksToMarkdown,
   stripTokenArg,
-  expandHomePath,
   hasJsonFlag,
   hasHelpFlag,
   log,
+  resolveSafePath,
+  expandHomePath,
 } = require('./notion-utils.js');
 
 // State file location — relative to the workspace, not the script
@@ -62,8 +63,11 @@ async function getPage(pageId) {
 
 async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
   try {
+    const safeLocalPath = resolveSafePath(localPath, { mode: 'read' });
+    const safeStateFile = resolveSafePath(stateFile, { mode: 'write' });
+
     const normalizedPageId = normalizeId(pageId);
-    const state = loadState(stateFile);
+    const state = loadState(safeStateFile);
     const pageState = state.pages[normalizedPageId] || {};
 
     const page = await getPage(normalizedPageId);
@@ -78,7 +82,7 @@ async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
       title,
       lastEditedTime,
       hasChanges,
-      localPath,
+      localPath: safeLocalPath,
       actions: []
     };
 
@@ -87,8 +91,8 @@ async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
       const notionMarkdown = blocksToMarkdown(blocks);
 
       let localDiffers = false;
-      if (fs.existsSync(localPath)) {
-        const localMarkdown = fs.readFileSync(localPath, 'utf8');
+      if (fs.existsSync(safeLocalPath)) {
+        const localMarkdown = fs.readFileSync(safeLocalPath, 'utf8');
         localDiffers = localMarkdown.trim() !== notionMarkdown.trim();
       }
 
@@ -111,7 +115,7 @@ async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
       pageState.lastChecked = new Date().toISOString();
       pageState.title = title;
       state.pages[normalizedPageId] = pageState;
-      saveState(stateFile, state);
+      saveState(safeStateFile, state);
     } else {
       result.actions.push('✓ No changes since last check');
     }
@@ -128,10 +132,10 @@ async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
 
 async function main() {
   const args = stripTokenArg(process.argv.slice(2));
+  const usage = 'Usage: watch-notion.js [--state-file <path>] <page-id> <local-path> [--json] [--allow-unsafe-paths]';
   const { pageId, localPath, stateFile } = parseWatchArgs(args);
 
   if (hasHelpFlag() || !pageId || !localPath) {
-    const usage = 'Usage: watch-notion.js [--state-file <path>] <page-id> <local-path> [--json]';
     if (hasJsonFlag()) {
       console.log(JSON.stringify(hasHelpFlag() ? { usage } : { error: usage }, null, 2));
     } else {
