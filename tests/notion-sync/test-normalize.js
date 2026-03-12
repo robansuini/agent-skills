@@ -31,6 +31,7 @@ const {
   log,
   expandHomePath,
   resolveToken,
+  resolveSafePath,
   _resetTokenCache,
   wrapNetworkError,
 } = require(path.join(skillScriptsDir, 'notion-utils.js'));
@@ -675,6 +676,66 @@ console.log('\n📋 token resolution and path expansion');
   } else {
     process.env.NOTION_API_KEY = originalEnv;
   }
+}
+
+// --- resolveSafePath path safety ---
+console.log('\n📋 resolveSafePath path safety');
+
+{
+  const originalCwd = process.cwd();
+  const originalArgv = process.argv.slice();
+
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'notion-safe-write-'));
+  const workspace = path.join(tempRoot, 'workspace');
+  fs.mkdirSync(workspace, { recursive: true });
+
+  process.chdir(workspace);
+  process.argv = ['node', 'script.js'];
+
+  const resolved = resolveSafePath('notes/daily/log.md', { mode: 'write' });
+  assertEqual(
+    resolved,
+    path.join(fs.realpathSync(workspace), 'notes/daily/log.md'),
+    'Allows nested write path inside workspace'
+  );
+
+  process.chdir(originalCwd);
+  process.argv = originalArgv;
+}
+
+{
+  const originalCwd = process.cwd();
+  const originalArgv = process.argv.slice();
+
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'notion-safe-symlink-'));
+  const workspace = path.join(tempRoot, 'workspace');
+  const outside = path.join(tempRoot, 'outside');
+  fs.mkdirSync(workspace, { recursive: true });
+  fs.mkdirSync(outside, { recursive: true });
+  fs.symlinkSync(outside, path.join(workspace, 'linkout'));
+
+  process.chdir(workspace);
+  process.argv = ['node', 'script.js'];
+
+  let threw = false;
+  try {
+    resolveSafePath('linkout/new/subdir/export.md', { mode: 'write' });
+  } catch (err) {
+    threw = err.message.includes('outside current workspace');
+  }
+
+  assert(threw, 'Blocks write path that escapes workspace via symlink ancestor');
+
+  process.argv = ['node', 'script.js', '--allow-unsafe-paths'];
+  const unsafeResolved = resolveSafePath('linkout/new/subdir/export.md', { mode: 'write' });
+  assertEqual(
+    unsafeResolved,
+    path.join(fs.realpathSync(outside), 'new/subdir/export.md'),
+    'Allows symlinked write path only when --allow-unsafe-paths is set'
+  );
+
+  process.chdir(originalCwd);
+  process.argv = originalArgv;
 }
 
 // --- error message formatting ---
