@@ -176,10 +176,18 @@ function resolveSafePath(inputPath, options = {}) {
       candidatePath = absolute;
     }
   } else if (mode === 'write') {
-    const parentDir = path.dirname(absolute);
-    if (fs.existsSync(parentDir)) {
+    let existingAncestor = absolute;
+    while (!fs.existsSync(existingAncestor)) {
+      const parentDir = path.dirname(existingAncestor);
+      if (parentDir === existingAncestor) break;
+      existingAncestor = parentDir;
+    }
+
+    if (fs.existsSync(existingAncestor)) {
       try {
-        candidatePath = path.join(fs.realpathSync(parentDir), path.basename(absolute));
+        const realAncestor = fs.realpathSync(existingAncestor);
+        const remainder = path.relative(existingAncestor, absolute);
+        candidatePath = path.join(realAncestor, remainder);
       } catch (_) {
         candidatePath = absolute;
       }

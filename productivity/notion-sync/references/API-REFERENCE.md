@@ -27,6 +27,14 @@ All scripts accept `--json` to emit machine-readable output and suppress stderr 
 - Success output is JSON
 - Errors are JSON objects: `{ "error": "..." }`
 
+## Path Safety Mode
+
+Scripts that read/write local files are restricted to the current working directory by default.
+
+- Applies to: `md-to-notion.js`, `notion-to-md.js`, `watch-notion.js`, `add-to-database.js`
+- Write-path checks resolve symlink ancestors before enforcement to prevent workspace escape via nested missing directories
+- Override intentionally with `--allow-unsafe-paths`
+
 ## Scripts Reference
 
 ### search-notion.js
@@ -120,7 +128,7 @@ Convert markdown to Notion page.
 
 **Signature:**
 ```bash
-node scripts/md-to-notion.js "<markdown-file>" "<parent-page-id>" "<title>" [--json]
+node scripts/md-to-notion.js "<markdown-file>" "<parent-page-id>" "<title>" [--json] [--allow-unsafe-paths]
 ```
 
 **Supported Markdown:**
@@ -144,7 +152,7 @@ Convert Notion page to markdown.
 
 **Signature:**
 ```bash
-node scripts/notion-to-md.js <page-id> [output-file] [--json]
+node scripts/notion-to-md.js <page-id> [output-file] [--json] [--allow-unsafe-paths]
 ```
 
 **Output:** Writes markdown to file or stdout
@@ -155,7 +163,7 @@ Monitor page for changes.
 
 **Signature:**
 ```bash
-node scripts/watch-notion.js [--state-file <path>] <page-id> <local-path> [--json]
+node scripts/watch-notion.js [--state-file <path>] <page-id> <local-path> [--json] [--allow-unsafe-paths]
 ```
 
 **State File:** Default `memory/notion-watch-state.json` (relative to cwd), overridable with `--state-file` (supports `~` expansion)

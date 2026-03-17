@@ -78,6 +78,7 @@ Scripts that read/write local files are restricted to the current working direct
 
 - Prevents accidental reads/writes outside the intended workspace
 - Applies to: `md-to-notion.js`, `add-to-database.js`, `notion-to-md.js`, `watch-notion.js`
+- Canonicalizes symlinked path ancestors before enforcement to block workspace-escape writes
 - Override intentionally with `--allow-unsafe-paths`
 
 Examples:
