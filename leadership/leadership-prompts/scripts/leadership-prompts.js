@@ -31,6 +31,8 @@ function printPrompt(p, verbose = true) {
   console.log();
 }
 
+const USAGE_CMD = 'node scripts/leadership-prompts.js';
+
 const [,, command, ...args] = process.argv;
 const query = args.join(' ');
 
@@ -43,7 +45,7 @@ switch (command) {
       console.log(`  ${cat} (${count} prompts)`);
     }
     console.log(`\n  Total: ${prompts.length} prompts`);
-    console.log('\nUse: node leadership-prompts.js category "Category Name"');
+    console.log(`\nUse: ${USAGE_CMD} category "Category Name"`);
     break;
   }
 
@@ -58,7 +60,7 @@ switch (command) {
   }
 
   case 'search': {
-    if (!query) { console.log('Usage: leadership-prompts.js search <keyword>'); break; }
+    if (!query) { console.log(`Usage: ${USAGE_CMD} search <keyword>`); break; }
     const prompts = loadPrompts();
     const q = query.toLowerCase();
     const results = prompts.filter(p =>
@@ -74,7 +76,7 @@ switch (command) {
   }
 
   case 'show': {
-    if (!query) { console.log('Usage: leadership-prompts.js show <prompt-id>'); break; }
+    if (!query) { console.log(`Usage: ${USAGE_CMD} show <prompt-id>`); break; }
     const prompts = loadPrompts();
     const p = prompts.find(p => p.id === query);
     if (!p) { console.log(`No prompt with ID "${query}". Use 'list' or 'search' to find IDs.`); break; }
@@ -83,7 +85,7 @@ switch (command) {
   }
 
   case 'category': {
-    if (!query) { console.log('Usage: leadership-prompts.js category "Category Name"'); break; }
+    if (!query) { console.log(`Usage: ${USAGE_CMD} category "Category Name"`); break; }
     const prompts = loadPrompts();
     const q = query.toLowerCase();
     const results = prompts.filter(p => p.category.toLowerCase().includes(q));
@@ -98,10 +100,10 @@ switch (command) {
 🎯 Leadership Prompts CLI
 
 Usage:
-  node leadership-prompts.js list                    List all categories
-  node leadership-prompts.js random [category]       Random prompt (optionally from category)
-  node leadership-prompts.js search <keyword>        Search prompts by keyword
-  node leadership-prompts.js show <prompt-id>        Show a specific prompt
-  node leadership-prompts.js category "Name"         All prompts in a category
+  ${USAGE_CMD} list                    List all categories
+  ${USAGE_CMD} random [category]       Random prompt (optionally from category)
+  ${USAGE_CMD} search <keyword>        Search prompts by keyword
+  ${USAGE_CMD} show <prompt-id>        Show a specific prompt
+  ${USAGE_CMD} category "Name"         All prompts in a category
 `);
 }
