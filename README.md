@@ -36,7 +36,7 @@ cd productivity/notion-sync
 node scripts/md-to-notion.js "draft.md" "<parent-id>" "Draft Title"
 
 # Monitor for changes
-node scripts/watch-notion.js
+node scripts/watch-notion.js "<page-id>" "draft.md"
 
 # Pull updates back
 node scripts/notion-to-md.js "<page-id>" "draft-updated.md"
