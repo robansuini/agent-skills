@@ -14,6 +14,7 @@ const {
   normalizeId,
   getAllBlocks,
   blocksToMarkdown,
+  extractTitle,
   stripTokenArg,
   hasJsonFlag,
   hasHelpFlag,
@@ -72,7 +73,7 @@ async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
 
     const page = await getPage(normalizedPageId);
     const lastEditedTime = page.last_edited_time;
-    const title = page.properties?.title?.title?.[0]?.plain_text || 'Untitled';
+    const title = extractTitle(page).replace(/^\(Untitled\)$/, 'Untitled');
 
     const hasChanges = !pageState.lastEditedTime ||
       new Date(lastEditedTime) > new Date(pageState.lastEditedTime);
