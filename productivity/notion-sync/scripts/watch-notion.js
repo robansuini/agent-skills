@@ -45,9 +45,28 @@ function parseWatchArgs(args) {
   };
 }
 
+function normalizeWatchState(state) {
+  if (!state || typeof state !== 'object' || Array.isArray(state)) {
+    return { pages: {} };
+  }
+
+  if (!state.pages || typeof state.pages !== 'object' || Array.isArray(state.pages)) {
+    return { ...state, pages: {} };
+  }
+
+  return state;
+}
+
 function loadState(stateFile) {
   if (!fs.existsSync(stateFile)) return { pages: {} };
-  return JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+
+  try {
+    const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+    return normalizeWatchState(state);
+  } catch (error) {
+    log(`Warning: failed to parse watch state file at ${stateFile}; resetting state.`);
+    return { pages: {} };
+  }
 }
 
 function saveState(stateFile, state) {
@@ -160,5 +179,5 @@ if (require.main === module) {
     process.exit(1);
   });
 } else {
-  module.exports = { checkPage, parseWatchArgs };
+  module.exports = { checkPage, parseWatchArgs, loadState, normalizeWatchState };
 }
