@@ -45,16 +45,23 @@ function parseWatchArgs(args) {
   };
 }
 
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
 function normalizeWatchState(state) {
-  if (!state || typeof state !== 'object' || Array.isArray(state)) {
+  if (!isPlainObject(state)) {
     return { pages: {} };
   }
 
-  if (!state.pages || typeof state.pages !== 'object' || Array.isArray(state.pages)) {
-    return { ...state, pages: {} };
+  const pages = isPlainObject(state.pages) ? state.pages : {};
+  const normalizedPages = {};
+
+  for (const [pageId, pageState] of Object.entries(pages)) {
+    normalizedPages[pageId] = isPlainObject(pageState) ? pageState : {};
   }
 
-  return state;
+  return { ...state, pages: normalizedPages };
 }
 
 function loadState(stateFile) {
@@ -87,7 +94,8 @@ async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
 
     const normalizedPageId = normalizeId(pageId);
     const state = loadState(safeStateFile);
-    const pageState = state.pages[normalizedPageId] || {};
+    const existingPageState = state.pages[normalizedPageId];
+    const pageState = isPlainObject(existingPageState) ? { ...existingPageState } : {};
 
     const page = await getPage(normalizedPageId);
     const lastEditedTime = page.last_edited_time;

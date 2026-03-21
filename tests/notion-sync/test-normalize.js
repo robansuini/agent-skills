@@ -35,7 +35,7 @@ const {
   _resetTokenCache,
   wrapNetworkError,
 } = require(path.join(skillScriptsDir, 'notion-utils.js'));
-const { parseWatchArgs, loadState } = require(path.join(skillScriptsDir, 'watch-notion.js'));
+const { parseWatchArgs, loadState, normalizeWatchState } = require(path.join(skillScriptsDir, 'watch-notion.js'));
 const { parseBatchUpdateArgs, DEFAULT_LIMIT } = require(path.join(skillScriptsDir, 'batch-update.js'));
 
 let passed = 0;
@@ -775,6 +775,32 @@ console.log('\n📋 watch-notion --state-file parsing');
 console.log('\n📋 watch-notion state loading');
 
 {
+  const normalized = normalizeWatchState({
+    lastRun: '2026-03-20T10:00:00.000Z',
+    pages: {
+      good: { lastEditedTime: '2026-03-20T10:00:00.000Z' },
+      badString: 'oops',
+      badNull: null,
+      badArray: ['oops'],
+    },
+  });
+
+  assertEqual(
+    normalized,
+    {
+      lastRun: '2026-03-20T10:00:00.000Z',
+      pages: {
+        good: { lastEditedTime: '2026-03-20T10:00:00.000Z' },
+        badString: {},
+        badNull: {},
+        badArray: {},
+      },
+    },
+    'normalizeWatchState sanitizes malformed per-page entries'
+  );
+}
+
+{
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-state-valid-'));
   const stateFile = path.join(tempDir, 'state.json');
   const expected = { pages: { abc: { lastEditedTime: '2026-03-20T10:00:00.000Z' } } };
@@ -810,6 +836,19 @@ console.log('\n📋 watch-notion state loading');
     loaded,
     { lastRun: '2026-03-20T10:00:00.000Z', pages: {} },
     'Legacy watch state without pages map is normalized'
+  );
+}
+
+{
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-state-entry-shape-'));
+  const stateFile = path.join(tempDir, 'state.json');
+  fs.writeFileSync(stateFile, JSON.stringify({ pages: { pageA: 'bad-entry' } }), 'utf8');
+
+  const loaded = loadState(stateFile);
+  assertEqual(
+    loaded,
+    { pages: { pageA: {} } },
+    'Malformed per-page state entry is normalized to empty object'
   );
 }
 
