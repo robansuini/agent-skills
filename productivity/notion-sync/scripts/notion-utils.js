@@ -535,6 +535,8 @@ function parseMarkdownToBlocks(markdown, options = {}) {
   let inCodeBlock = false;
   let codeLanguage = '';
   let codeContent = [];
+  let codeFenceMarker = '';
+  let codeFenceLength = 0;
 
   const flushParagraph = () => {
     if (currentParagraph.length > 0) {
@@ -563,24 +565,36 @@ function parseMarkdownToBlocks(markdown, options = {}) {
     inCodeBlock = false;
     codeLanguage = '';
     codeContent = [];
+    codeFenceMarker = '';
+    codeFenceLength = 0;
   };
 
   for (const line of lines) {
-    // Code blocks
-    if (line.startsWith('```')) {
-      if (!inCodeBlock) {
-        flushParagraph();
-        inCodeBlock = true;
-        codeLanguage = line.slice(3).trim() || 'plain text';
-        codeContent = [];
-      } else {
-        flushCodeBlock();
-      }
+    // Fenced code blocks (``` or ~~~)
+    const openingFenceMatch = line.match(/^(`{3,}|~{3,})(.*)$/);
+    if (!inCodeBlock && openingFenceMatch) {
+      flushParagraph();
+      inCodeBlock = true;
+      codeFenceMarker = openingFenceMatch[1][0];
+      codeFenceLength = openingFenceMatch[1].length;
+      codeLanguage = openingFenceMatch[2].trim() || 'plain text';
+      codeContent = [];
       continue;
     }
 
     if (inCodeBlock) {
-      codeContent.push(line);
+      const closingFenceMatch = line.match(/^(`+|~+)\s*$/);
+      const isMatchingClosingFence = Boolean(
+        closingFenceMatch
+        && closingFenceMatch[1][0] === codeFenceMarker
+        && closingFenceMatch[1].length >= codeFenceLength
+      );
+
+      if (isMatchingClosingFence) {
+        flushCodeBlock();
+      } else {
+        codeContent.push(line);
+      }
       continue;
     }
 

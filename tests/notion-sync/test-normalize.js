@@ -239,6 +239,20 @@ console.log('\n📋 parseMarkdownToBlocks');
 }
 
 {
+  const blocks = parseMarkdownToBlocks('~~~python\nprint("hi")\n~~~');
+  assertEqual(blocks.length, 1, 'Tilde fence code block: one block');
+  assertEqual(blocks[0].type, 'code', 'Tilde fence code block: correct type');
+  assertEqual(blocks[0].code.language, 'python', 'Tilde fence code block: language preserved');
+  assertEqual(blocks[0].code.rich_text[0].text.content, 'print("hi")', 'Tilde fence code block: content preserved');
+}
+
+{
+  const blocks = parseMarkdownToBlocks('```md\nbefore\n```js\nafter\n```');
+  assertEqual(blocks.length, 1, 'Fence-like line with info string inside code block is treated as content');
+  assertEqual(blocks[0].code.rich_text.map(chunk => chunk.text.content).join(''), 'before\n```js\nafter', 'Fence-like content line is preserved');
+}
+
+{
   const blocks = parseMarkdownToBlocks('```js\nconst y = 2;');
   assertEqual(blocks.length, 1, 'Unclosed code block: still emitted at EOF');
   assertEqual(blocks[0].type, 'code', 'Unclosed code block: type is code');
@@ -251,6 +265,13 @@ console.log('\n📋 parseMarkdownToBlocks');
   assertEqual(blocks.length, 1, 'Unclosed empty code fence: still emitted at EOF');
   assertEqual(blocks[0].code.language, 'plain text', 'Unclosed empty code fence: default language applied');
   assertEqual(blocks[0].code.rich_text[0].text.content, '', 'Unclosed empty code fence: empty content preserved');
+}
+
+{
+  const blocks = parseMarkdownToBlocks('~~~sql\nselect 1;');
+  assertEqual(blocks.length, 1, 'Unclosed tilde code fence: still emitted at EOF');
+  assertEqual(blocks[0].code.language, 'sql', 'Unclosed tilde code fence: language preserved');
+  assertEqual(blocks[0].code.rich_text[0].text.content, 'select 1;', 'Unclosed tilde code fence: content preserved');
 }
 
 {
