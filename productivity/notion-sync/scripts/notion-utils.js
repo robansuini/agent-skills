@@ -549,6 +549,22 @@ function parseMarkdownToBlocks(markdown, options = {}) {
     }
   };
 
+  const flushCodeBlock = () => {
+    const codeText = codeContent.join('\n');
+    blocks.push({
+      type: 'code',
+      code: {
+        language: codeLanguage,
+        rich_text: codeText
+          ? parseRichText(codeText)
+          : [{ type: 'text', text: { content: '' } }]
+      }
+    });
+    inCodeBlock = false;
+    codeLanguage = '';
+    codeContent = [];
+  };
+
   for (const line of lines) {
     // Code blocks
     if (line.startsWith('```')) {
@@ -558,19 +574,7 @@ function parseMarkdownToBlocks(markdown, options = {}) {
         codeLanguage = line.slice(3).trim() || 'plain text';
         codeContent = [];
       } else {
-        const codeText = codeContent.join('\n');
-        blocks.push({
-          type: 'code',
-          code: {
-            language: codeLanguage,
-            rich_text: codeText
-              ? parseRichText(codeText)
-              : [{ type: 'text', text: { content: '' } }]
-          }
-        });
-        inCodeBlock = false;
-        codeLanguage = '';
-        codeContent = [];
+        flushCodeBlock();
       }
       continue;
     }
@@ -616,6 +620,10 @@ function parseMarkdownToBlocks(markdown, options = {}) {
     }
 
     currentParagraph.push(line);
+  }
+
+  if (inCodeBlock) {
+    flushCodeBlock();
   }
 
   flushParagraph();

@@ -144,6 +144,8 @@ node scripts/md-to-notion.js "<markdown-file>" "<parent-page-id>" "<title>" [--j
 
 **Rich text safety:** markdown rich_text segments are automatically split to Notion's 2000-character per-item limit (plain, bold, italic, and links).
 
+**Code fence safety:** unclosed fenced code blocks at end-of-file are still emitted as Notion `code` blocks instead of being dropped.
+
 **Rate Limiting:** 350ms between batch uploads (100 blocks per batch)
 
 ### notion-to-md.js

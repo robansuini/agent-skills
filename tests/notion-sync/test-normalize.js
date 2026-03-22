@@ -239,6 +239,21 @@ console.log('\n📋 parseMarkdownToBlocks');
 }
 
 {
+  const blocks = parseMarkdownToBlocks('```js\nconst y = 2;');
+  assertEqual(blocks.length, 1, 'Unclosed code block: still emitted at EOF');
+  assertEqual(blocks[0].type, 'code', 'Unclosed code block: type is code');
+  assertEqual(blocks[0].code.language, 'js', 'Unclosed code block: language preserved');
+  assertEqual(blocks[0].code.rich_text[0].text.content, 'const y = 2;', 'Unclosed code block: content preserved');
+}
+
+{
+  const blocks = parseMarkdownToBlocks('```');
+  assertEqual(blocks.length, 1, 'Unclosed empty code fence: still emitted at EOF');
+  assertEqual(blocks[0].code.language, 'plain text', 'Unclosed empty code fence: default language applied');
+  assertEqual(blocks[0].code.rich_text[0].text.content, '', 'Unclosed empty code fence: empty content preserved');
+}
+
+{
   const longCode = 'x'.repeat(4500);
   const blocks = parseMarkdownToBlocks(`\`\`\`\n${longCode}\n\`\`\``);
   assertEqual(blocks.length, 1, 'Long code block: one block');
