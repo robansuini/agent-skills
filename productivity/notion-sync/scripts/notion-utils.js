@@ -591,8 +591,8 @@ function parseMarkdownToBlocks(markdown, options = {}) {
       continue;
     }
 
-    // Horizontal rules
-    if (/^---+$/.test(line)) {
+    // Horizontal rules (---, ***, ___ and longer repeats)
+    if (/^(?:-{3,}|\*{3,}|_{3,})$/.test(line.trim())) {
       flushParagraph();
       blocks.push({ type: 'divider', divider: {} });
       continue;
