@@ -137,12 +137,14 @@ node scripts/md-to-notion.js "<markdown-file>" "<parent-page-id>" "<title>" [--j
 - Italic: `*text*`
 - Links: `[text](url)`
 - Lists: `- item`
-- Code: ` ```lang ... ``` `
+- Code: fenced blocks with ```lang ... ``` or ~~~lang ... ~~~
 - Dividers: `---`
 
 **Output:** Notion page URL and ID
 
 **Rich text safety:** markdown rich_text segments are automatically split to Notion's 2000-character per-item limit (plain, bold, italic, and links).
+
+**Code fence safety:** unclosed fenced code blocks (``` or ~~~) at end-of-file are still emitted as Notion `code` blocks instead of being dropped, and fence-like lines with info strings inside code blocks are preserved as content.
 
 **Rate Limiting:** 350ms between batch uploads (100 blocks per batch)
 
