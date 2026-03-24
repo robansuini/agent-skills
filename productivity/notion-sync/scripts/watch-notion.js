@@ -45,9 +45,35 @@ function parseWatchArgs(args) {
   };
 }
 
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeWatchState(state) {
+  if (!isPlainObject(state)) {
+    return { pages: {} };
+  }
+
+  const pages = isPlainObject(state.pages) ? state.pages : {};
+  const normalizedPages = {};
+
+  for (const [pageId, pageState] of Object.entries(pages)) {
+    normalizedPages[pageId] = isPlainObject(pageState) ? pageState : {};
+  }
+
+  return { ...state, pages: normalizedPages };
+}
+
 function loadState(stateFile) {
   if (!fs.existsSync(stateFile)) return { pages: {} };
-  return JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+
+  try {
+    const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+    return normalizeWatchState(state);
+  } catch (error) {
+    log(`Warning: failed to parse watch state file at ${stateFile}; resetting state.`);
+    return { pages: {} };
+  }
 }
 
 function saveState(stateFile, state) {
@@ -68,7 +94,8 @@ async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
 
     const normalizedPageId = normalizeId(pageId);
     const state = loadState(safeStateFile);
-    const pageState = state.pages[normalizedPageId] || {};
+    const existingPageState = state.pages[normalizedPageId];
+    const pageState = isPlainObject(existingPageState) ? { ...existingPageState } : {};
 
     const page = await getPage(normalizedPageId);
     const lastEditedTime = page.last_edited_time;
@@ -160,5 +187,5 @@ if (require.main === module) {
     process.exit(1);
   });
 } else {
-  module.exports = { checkPage, parseWatchArgs };
+  module.exports = { checkPage, parseWatchArgs, loadState, normalizeWatchState };
 }
