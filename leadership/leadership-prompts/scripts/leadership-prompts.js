@@ -34,7 +34,8 @@ function printPrompt(p, verbose = true) {
 const USAGE_CMD = 'node scripts/leadership-prompts.js';
 
 const [,, command, ...args] = process.argv;
-const query = args.join(' ');
+const query = args.join(' ').trim();
+const normalizedQuery = query.toLowerCase();
 
 switch (command) {
   case 'list': {
@@ -52,7 +53,7 @@ switch (command) {
   case 'random': {
     const prompts = loadPrompts();
     const filtered = query
-      ? prompts.filter(p => p.category.toLowerCase().includes(query.toLowerCase()))
+      ? prompts.filter(p => p.category.toLowerCase().includes(normalizedQuery))
       : prompts;
     if (!filtered.length) { console.log('No prompts found.'); break; }
     printPrompt(filtered[Math.floor(Math.random() * filtered.length)]);
@@ -62,12 +63,12 @@ switch (command) {
   case 'search': {
     if (!query) { console.log(`Usage: ${USAGE_CMD} search <keyword>`); break; }
     const prompts = loadPrompts();
-    const q = query.toLowerCase();
     const results = prompts.filter(p =>
-      p.title.toLowerCase().includes(q) ||
-      p.prompt.toLowerCase().includes(q) ||
-      p.context.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q)
+      p.id.toLowerCase().includes(normalizedQuery) ||
+      p.title.toLowerCase().includes(normalizedQuery) ||
+      p.prompt.toLowerCase().includes(normalizedQuery) ||
+      p.context.toLowerCase().includes(normalizedQuery) ||
+      p.category.toLowerCase().includes(normalizedQuery)
     );
     if (!results.length) { console.log(`No prompts matching "${query}"`); break; }
     console.log(`\n🔍 ${results.length} prompt(s) matching "${query}":\n`);
@@ -78,7 +79,7 @@ switch (command) {
   case 'show': {
     if (!query) { console.log(`Usage: ${USAGE_CMD} show <prompt-id>`); break; }
     const prompts = loadPrompts();
-    const p = prompts.find(p => p.id === query);
+    const p = prompts.find(p => p.id.toLowerCase() === normalizedQuery);
     if (!p) { console.log(`No prompt with ID "${query}". Use 'list' or 'search' to find IDs.`); break; }
     printPrompt(p);
     break;
@@ -87,8 +88,7 @@ switch (command) {
   case 'category': {
     if (!query) { console.log(`Usage: ${USAGE_CMD} category "Category Name"`); break; }
     const prompts = loadPrompts();
-    const q = query.toLowerCase();
-    const results = prompts.filter(p => p.category.toLowerCase().includes(q));
+    const results = prompts.filter(p => p.category.toLowerCase().includes(normalizedQuery));
     if (!results.length) { console.log(`No category matching "${query}"`); break; }
     console.log(`\n📂 ${results[0].category} (${results.length} prompts):\n`);
     for (const p of results) printPrompt(p, false);
@@ -106,4 +106,5 @@ Usage:
   ${USAGE_CMD} show <prompt-id>        Show a specific prompt
   ${USAGE_CMD} category "Name"         All prompts in a category
 `);
+    if (command) process.exit(1);
 }

@@ -215,8 +215,20 @@ console.log('\n📋 parseMarkdownToBlocks');
 
 {
   const blocks = parseMarkdownToBlocks('---');
-  assertEqual(blocks.length, 1, 'Divider: one block');
-  assertEqual(blocks[0].type, 'divider', 'Divider: correct type');
+  assertEqual(blocks.length, 1, 'Divider (dashes): one block');
+  assertEqual(blocks[0].type, 'divider', 'Divider (dashes): correct type');
+}
+
+{
+  const blocks = parseMarkdownToBlocks('***');
+  assertEqual(blocks.length, 1, 'Divider (stars): one block');
+  assertEqual(blocks[0].type, 'divider', 'Divider (stars): correct type');
+}
+
+{
+  const blocks = parseMarkdownToBlocks('___');
+  assertEqual(blocks.length, 1, 'Divider (underscores): one block');
+  assertEqual(blocks[0].type, 'divider', 'Divider (underscores): correct type');
 }
 
 {
