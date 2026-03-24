@@ -35,7 +35,7 @@ const {
   _resetTokenCache,
   wrapNetworkError,
 } = require(path.join(skillScriptsDir, 'notion-utils.js'));
-const { parseWatchArgs } = require(path.join(skillScriptsDir, 'watch-notion.js'));
+const { parseWatchArgs, loadState, normalizeWatchState } = require(path.join(skillScriptsDir, 'watch-notion.js'));
 const { parseBatchUpdateArgs, DEFAULT_LIMIT } = require(path.join(skillScriptsDir, 'batch-update.js'));
 
 let passed = 0;
@@ -781,6 +781,87 @@ console.log('\n📋 watch-notion --state-file parsing');
   assertEqual(parsed.stateFile, '/tmp/notion-home/.watch-state.json', 'Expands ~ in --state-file path');
 
   os.homedir = originalHomedir;
+}
+
+// --- watch-notion state loading ---
+console.log('\n📋 watch-notion state loading');
+
+{
+  const normalized = normalizeWatchState({
+    lastRun: '2026-03-20T10:00:00.000Z',
+    pages: {
+      good: { lastEditedTime: '2026-03-20T10:00:00.000Z' },
+      badString: 'oops',
+      badNull: null,
+      badArray: ['oops'],
+    },
+  });
+
+  assertEqual(
+    normalized,
+    {
+      lastRun: '2026-03-20T10:00:00.000Z',
+      pages: {
+        good: { lastEditedTime: '2026-03-20T10:00:00.000Z' },
+        badString: {},
+        badNull: {},
+        badArray: {},
+      },
+    },
+    'normalizeWatchState sanitizes malformed per-page entries'
+  );
+}
+
+{
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-state-valid-'));
+  const stateFile = path.join(tempDir, 'state.json');
+  const expected = { pages: { abc: { lastEditedTime: '2026-03-20T10:00:00.000Z' } } };
+  fs.writeFileSync(stateFile, JSON.stringify(expected), 'utf8');
+
+  const loaded = loadState(stateFile);
+  assertEqual(loaded, expected, 'Loads valid watch state JSON as-is');
+}
+
+{
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-state-missing-'));
+  const missingStateFile = path.join(tempDir, 'missing.json');
+  const loaded = loadState(missingStateFile);
+  assertEqual(loaded, { pages: {} }, 'Missing watch state file returns empty state');
+}
+
+{
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-state-invalid-'));
+  const stateFile = path.join(tempDir, 'state.json');
+  fs.writeFileSync(stateFile, '{ invalid json', 'utf8');
+
+  const loaded = loadState(stateFile);
+  assertEqual(loaded, { pages: {} }, 'Malformed watch state JSON resets to empty state');
+}
+
+{
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-state-legacy-'));
+  const stateFile = path.join(tempDir, 'state.json');
+  fs.writeFileSync(stateFile, JSON.stringify({ lastRun: '2026-03-20T10:00:00.000Z' }), 'utf8');
+
+  const loaded = loadState(stateFile);
+  assertEqual(
+    loaded,
+    { lastRun: '2026-03-20T10:00:00.000Z', pages: {} },
+    'Legacy watch state without pages map is normalized'
+  );
+}
+
+{
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-state-entry-shape-'));
+  const stateFile = path.join(tempDir, 'state.json');
+  fs.writeFileSync(stateFile, JSON.stringify({ pages: { pageA: 'bad-entry' } }), 'utf8');
+
+  const loaded = loadState(stateFile);
+  assertEqual(
+    loaded,
+    { pages: { pageA: {} } },
+    'Malformed per-page state entry is normalized to empty object'
+  );
 }
 
 // --- batch-update argument parsing ---
