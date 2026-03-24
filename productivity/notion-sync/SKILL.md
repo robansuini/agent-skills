@@ -443,7 +443,7 @@ node scripts/delete-notion-page.js <page-id> [--json]
 
 2. **Sync to Notion database:**
    ```bash
-   node scripts/add-research-to-db.js
+   node scripts/add-to-database.js <database-id> "Research Output - 2026-03-21" research-output.md
    ```
 
 3. **User adds metadata in Notion UI** (Type, Tags, Status properties)
