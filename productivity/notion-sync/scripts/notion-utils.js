@@ -627,6 +627,17 @@ function parseMarkdownToBlocks(markdown, options = {}) {
       continue;
     }
 
+    // Numbered lists
+    if (/^\d+\.\s+/.test(line)) {
+      flushParagraph();
+      const text = line.replace(/^\d+\.\s+/, '').trim();
+      blocks.push({
+        type: 'numbered_list_item',
+        numbered_list_item: { rich_text: toRichText(text) }
+      });
+      continue;
+    }
+
     // Empty lines
     if (line.trim() === '') {
       flushParagraph();

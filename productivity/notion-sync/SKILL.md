@@ -246,7 +246,7 @@ node scripts/md-to-notion.js \
 - Headings (H1-H3)
 - Bold/italic text
 - Links
-- Bullet lists
+- Bullet and numbered lists
 - Code blocks with syntax highlighting (``` or ~~~ fences)
 - Horizontal dividers
 - Paragraphs
