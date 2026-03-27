@@ -238,6 +238,19 @@ console.log('\n📋 parseMarkdownToBlocks');
 }
 
 {
+  const blocks = parseMarkdownToBlocks('1. Item 1\n2. Item 2');
+  assertEqual(blocks.length, 2, 'Numbered list: two blocks');
+  assertEqual(blocks[0].type, 'numbered_list_item', 'Numbered list: correct type');
+}
+
+{
+  const blocks = parseMarkdownToBlocks('- Bullet\n1. Numbered');
+  assertEqual(blocks.length, 2, 'Mixed bullet + numbered list: two blocks');
+  assertEqual(blocks[0].type, 'bulleted_list_item', 'Mixed list: first bullet item type');
+  assertEqual(blocks[1].type, 'numbered_list_item', 'Mixed list: second numbered item type');
+}
+
+{
   const blocks = parseMarkdownToBlocks('```javascript\nconst x = 1;\n```');
   assertEqual(blocks.length, 1, 'Code block: one block');
   assertEqual(blocks[0].type, 'code', 'Code: correct type');
