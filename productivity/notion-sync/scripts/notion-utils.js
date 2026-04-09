@@ -112,6 +112,13 @@ function shouldRequireApiKey(rawArgs = process.argv.slice(2)) {
   if (args.length === 0) return false;
   if (args.includes('--help') || args.includes('-h')) return false;
 
+  // Usage-first behavior: if invocation starts with option flags,
+  // let script-level arg validation print usage/errors before auth checks.
+  if (args[0].startsWith('-')) {
+    if (args[0] !== '--stdin') return false;
+    return args.slice(1).some(arg => !arg.startsWith('-'));
+  }
+
   return true;
 }
 

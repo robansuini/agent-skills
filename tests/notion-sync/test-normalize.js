@@ -727,15 +727,27 @@ assertEqual(
 );
 
 assertEqual(
+  shouldRequireApiKey(['--filter', 'page']),
+  false,
+  'Option-first usage path: auth check not required'
+);
+
+assertEqual(
   shouldRequireApiKey(['page-id']),
   true,
   'Positional args present: auth check required'
 );
 
 assertEqual(
+  shouldRequireApiKey(['--stdin']),
+  false,
+  '--stdin without positional values: auth check not required'
+);
+
+assertEqual(
   shouldRequireApiKey(['--stdin', 'Status', 'Review']),
   true,
-  'Operational flag mode with values: auth check required'
+  'Operational --stdin mode with values: auth check required'
 );
 
 
