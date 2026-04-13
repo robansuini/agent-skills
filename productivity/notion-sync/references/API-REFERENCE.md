@@ -159,6 +159,8 @@ node scripts/notion-to-md.js <page-id> [output-file] [--json] [--allow-unsafe-pa
 
 **Output:** Writes markdown to file or stdout
 
+**Title resolution:** Uses the page's actual Notion `title`-type property (works even when the property key is not literally `title`).
+
 ### watch-notion.js
 
 Monitor page for changes.

@@ -287,6 +287,7 @@ node scripts/notion-to-md.js \
 **Features:**
 - Converts Notion blocks to markdown
 - Preserves formatting (headings, lists, code, quotes)
+- Resolves page titles from the actual Notion `title`-type property (even when the property key is custom)
 - Optional file output (writes to file or stdout)
 
 ### 7. Change Detection & Monitoring

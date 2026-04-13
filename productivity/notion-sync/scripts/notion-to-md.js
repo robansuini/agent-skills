@@ -12,6 +12,7 @@ const {
   normalizeId,
   getAllBlocks,
   blocksToMarkdown,
+  extractTitle,
   stripTokenArg,
   hasJsonFlag,
   log,
@@ -24,6 +25,10 @@ const {
 async function getPage(pageId) {
   const id = normalizeId(pageId);
   return notionRequest(`/v1/pages/${encodeURIComponent(id)}`, 'GET');
+}
+
+function extractPageTitle(page) {
+  return extractTitle(page).replace(/^\(Untitled\)$/, 'Untitled');
 }
 
 async function main() {
@@ -53,7 +58,7 @@ async function main() {
 
   try {
     const page = await getPage(pageId);
-    const title = page.properties?.title?.title?.[0]?.plain_text || 'Untitled';
+    const title = extractPageTitle(page);
 
     const blocks = await getAllBlocks(pageId);
     const markdown = blocksToMarkdown(blocks);
@@ -97,5 +102,12 @@ if (require.main === module) {
 } else {
   // Re-export utilities for backwards compatibility (v1.0.x)
   // Prefer importing from notion-utils.js directly for new code
-  module.exports = { getPage, main, getAllBlocks, blocksToMarkdown, normalizeId };
+  module.exports = {
+    getPage,
+    main,
+    extractPageTitle,
+    getAllBlocks,
+    blocksToMarkdown,
+    normalizeId,
+  };
 }
