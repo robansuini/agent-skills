@@ -37,6 +37,7 @@ const {
 } = require(path.join(skillScriptsDir, 'notion-utils.js'));
 const { parseWatchArgs, loadState, normalizeWatchState } = require(path.join(skillScriptsDir, 'watch-notion.js'));
 const { parseBatchUpdateArgs, DEFAULT_LIMIT } = require(path.join(skillScriptsDir, 'batch-update.js'));
+const { extractPageTitle } = require(path.join(skillScriptsDir, 'notion-to-md.js'));
 
 let passed = 0;
 let failed = 0;
@@ -587,6 +588,33 @@ assertEqual(
   extractTitle({ object: 'page', properties: { Name: { type: 'title', title: [{ plain_text: 'Part 1' }, { plain_text: ' Part 2' }] } } }),
   'Part 1 Part 2',
   'Multi-part title concatenated'
+);
+
+// --- notion-to-md title extraction ---
+console.log('\n📋 notion-to-md title extraction');
+
+assertEqual(
+  extractPageTitle({
+    object: 'page',
+    properties: {
+      Name: {
+        type: 'title',
+        title: [{ plain_text: 'Custom Name Property Title' }],
+      },
+      Status: {
+        type: 'select',
+        select: { name: 'Draft' },
+      },
+    },
+  }),
+  'Custom Name Property Title',
+  'notion-to-md: uses title-type property even when key is not "title"'
+);
+
+assertEqual(
+  extractPageTitle({ object: 'page', properties: {} }),
+  'Untitled',
+  'notion-to-md: maps (Untitled) fallback to Untitled'
 );
 
 // --- createDetailedError ---
