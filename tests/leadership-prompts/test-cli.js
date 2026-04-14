@@ -40,6 +40,16 @@ expectSuccess([], [
   output => output.includes('Usage:'),
 ]);
 
+expectSuccess(['--help'], [
+  output => output.includes('Leadership Prompts CLI'),
+  output => output.includes('Usage:'),
+]);
+
+expectSuccess(['-h'], [
+  output => output.includes('Leadership Prompts CLI'),
+  output => output.includes('Usage:'),
+]);
+
 expectSuccess(['list'], [
   output => output.includes('Leadership Prompt Categories'),
   output => output.includes('Total:'),
