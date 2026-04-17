@@ -27,6 +27,7 @@ const {
   richTextToPlain,
   createDetailedError,
   stripTokenArg,
+  shouldRequireApiKey,
   hasJsonFlag,
   log,
   expandHomePath,
@@ -724,6 +725,57 @@ assertEqual(
   stripTokenArg(['query', '--json', '--limit', '5']),
   ['query', '--limit', '5'],
   'Strips --json flag'
+);
+
+// --- shouldRequireApiKey ---
+console.log('\n📋 shouldRequireApiKey');
+
+assertEqual(
+  shouldRequireApiKey([]),
+  false,
+  'No args: auth check not required (usage path)'
+);
+
+assertEqual(
+  shouldRequireApiKey(['--help']),
+  false,
+  '--help: auth check not required'
+);
+
+assertEqual(
+  shouldRequireApiKey(['--token-file', '/tmp/token']),
+  false,
+  'Token flags only: auth check not required'
+);
+
+assertEqual(
+  shouldRequireApiKey(['--json']),
+  false,
+  '--json only: auth check not required'
+);
+
+assertEqual(
+  shouldRequireApiKey(['--filter', 'page']),
+  false,
+  'Option-first usage path: auth check not required'
+);
+
+assertEqual(
+  shouldRequireApiKey(['page-id']),
+  true,
+  'Positional args present: auth check required'
+);
+
+assertEqual(
+  shouldRequireApiKey(['--stdin']),
+  false,
+  '--stdin without positional values: auth check not required'
+);
+
+assertEqual(
+  shouldRequireApiKey(['--stdin', 'Status', 'Review']),
+  true,
+  'Operational --stdin mode with values: auth check required'
 );
 
 
