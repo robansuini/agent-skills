@@ -106,9 +106,24 @@ function getApiKey() {
 /**
  * Check if a Notion API token was provided, exit with helpful message if not
  */
+function shouldRequireApiKey(rawArgs = process.argv.slice(2)) {
+  const args = stripTokenArg(rawArgs);
+
+  if (args.length === 0) return false;
+  if (args.includes('--help') || args.includes('-h')) return false;
+
+  // Usage-first behavior: if invocation starts with option flags,
+  // let script-level arg validation print usage/errors before auth checks.
+  if (args[0].startsWith('-')) {
+    if (args[0] !== '--stdin') return false;
+    return args.slice(1).some(arg => !arg.startsWith('-'));
+  }
+
+  return true;
+}
+
 function checkApiKey() {
-  // Allow usage/help output without requiring credentials.
-  if (hasHelpFlag()) return;
+  if (!shouldRequireApiKey()) return;
 
   if (!getApiKey()) {
     const message = 'No Notion API token found. Provide one via: --token-file <path>, --token-stdin (pipe), or NOTION_API_KEY env var.';
@@ -787,6 +802,7 @@ module.exports = {
   getApiKey,
   resolveToken,
   checkApiKey,
+  shouldRequireApiKey,
   stripTokenArg,
   hasJsonFlag,
   hasHelpFlag,
