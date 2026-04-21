@@ -59,6 +59,11 @@ expectSuccess(['category', 'Team Health'], [
   output => output.includes('ID: team-health'),
 ]);
 
+expectFailure(['category', 't'], [
+  output => output.includes('Ambiguous category "t"'),
+  output => output.includes('- Team Health'),
+]);
+
 expectSuccess(['random'], [
   output => output.includes('ID:'),
   output => output.includes('PROMPT:'),
