@@ -33,9 +33,27 @@ function printPrompt(p, verbose = true) {
 
 const USAGE_CMD = 'node scripts/leadership-prompts.js';
 
+function printUsage() {
+  console.log(`
+🎯 Leadership Prompts CLI
+
+Usage:
+  ${USAGE_CMD} list                    List all categories
+  ${USAGE_CMD} random [category]       Random prompt (optionally from category)
+  ${USAGE_CMD} search <keyword>        Search prompts by keyword
+  ${USAGE_CMD} show <prompt-id>        Show a specific prompt
+  ${USAGE_CMD} category "Name"         All prompts in a category
+`);
+}
+
 const [,, command, ...args] = process.argv;
 const query = args.join(' ').trim();
 const normalizedQuery = query.toLowerCase();
+
+if (command === '--help' || command === '-h') {
+  printUsage();
+  process.exit(0);
+}
 
 switch (command) {
   case 'list': {
@@ -96,15 +114,6 @@ switch (command) {
   }
 
   default:
-    console.log(`
-🎯 Leadership Prompts CLI
-
-Usage:
-  ${USAGE_CMD} list                    List all categories
-  ${USAGE_CMD} random [category]       Random prompt (optionally from category)
-  ${USAGE_CMD} search <keyword>        Search prompts by keyword
-  ${USAGE_CMD} show <prompt-id>        Show a specific prompt
-  ${USAGE_CMD} category "Name"         All prompts in a category
-`);
+    printUsage();
     if (command) process.exit(1);
 }
