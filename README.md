@@ -29,6 +29,9 @@ Bi-directional sync and management for Notion pages and databases. Enables colla
 **Example workflows** (start from repository root):
 
 ```bash
+# Prereq: configure a Notion token (one of: NOTION_API_KEY, ~/.notion-token, --token-file, --token-stdin)
+# See "Notion Integration Setup" below for details.
+
 # Move into the notion-sync skill once
 cd productivity/notion-sync
 
@@ -174,6 +177,15 @@ skill-name/
 ### Node.js
 
 Scripts require Node.js v18+ (uses built-in modules only, no npm install needed).
+
+## Running Tests
+
+From repository root:
+
+```bash
+node tests/leadership-prompts/test-cli.js
+node tests/notion-sync/test-normalize.js
+```
 
 ## Contributing
 
