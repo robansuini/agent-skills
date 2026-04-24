@@ -31,7 +31,30 @@ function printPrompt(p, verbose = true) {
   console.log();
 }
 
-const USAGE_CMD = 'node scripts/leadership-prompts.js';
+const USAGE_CMD = `node ${path.relative(process.cwd(), __filename)}`;
+
+function getUniqueCategories(prompts) {
+  return [...new Set(prompts.map(p => p.category))];
+}
+
+function resolveCategoryOrExit(categories, query, normalizedQuery) {
+  const exact = categories.find(c => c.toLowerCase() === normalizedQuery);
+  if (exact) return exact;
+
+  const matches = categories.filter(c => c.toLowerCase().includes(normalizedQuery));
+  if (matches.length === 1) return matches[0];
+
+  if (!matches.length) {
+    console.log(`No category matching "${query}"`);
+    process.exit(1);
+  }
+
+  console.log(`Ambiguous category "${query}". Did you mean:`);
+  for (const c of matches.slice().sort((a, b) => a.localeCompare(b))) {
+    console.log(`  - ${c}`);
+  }
+  process.exit(1);
+}
 
 function printUsage() {
   console.log(`
@@ -60,8 +83,8 @@ switch (command) {
     const prompts = loadPrompts();
     const cats = getCategories(prompts);
     console.log('\n📂 Leadership Prompt Categories:\n');
-    for (const [cat, count] of Object.entries(cats)) {
-      console.log(`  ${cat} (${count} prompts)`);
+    for (const cat of Object.keys(cats).sort((a, b) => a.localeCompare(b))) {
+      console.log(`  ${cat} (${cats[cat]} prompts)`);
     }
     console.log(`\n  Total: ${prompts.length} prompts`);
     console.log(`\nUse: ${USAGE_CMD} category "Category Name"`);
@@ -106,9 +129,10 @@ switch (command) {
   case 'category': {
     if (!query) { console.log(`Usage: ${USAGE_CMD} category "Category Name"`); break; }
     const prompts = loadPrompts();
-    const results = prompts.filter(p => p.category.toLowerCase().includes(normalizedQuery));
-    if (!results.length) { console.log(`No category matching "${query}"`); break; }
-    console.log(`\n📂 ${results[0].category} (${results.length} prompts):\n`);
+    const categories = getUniqueCategories(prompts);
+    const category = resolveCategoryOrExit(categories, query, normalizedQuery);
+    const results = prompts.filter(p => p.category === category);
+    console.log(`\n📂 ${category} (${results.length} prompts):\n`);
     for (const p of results) printPrompt(p, false);
     break;
   }
