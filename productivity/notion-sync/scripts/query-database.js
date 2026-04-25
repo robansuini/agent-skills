@@ -10,6 +10,7 @@ const {
   notionRequest,
   extractPropertyValue,
   stripTokenArg,
+  parsePositiveInteger,
   hasJsonFlag,
   log,
 } = require('./notion-utils.js');
@@ -94,7 +95,7 @@ async function main() {
           throw new Error(`Invalid JSON for --sort: ${err.message}`);
         }
       } else if (args[i] === '--limit' && args[i + 1]) {
-        limit = parseInt(args[++i]);
+        limit = parsePositiveInteger(args[++i], '--limit');
       }
     }
 

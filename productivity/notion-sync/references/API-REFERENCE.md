@@ -49,7 +49,7 @@ node scripts/search-notion.js "<query>" [--filter page|database] [--limit 10] [-
 **Options:**
 - `query` (required): Search term
 - `--filter`: Restrict to `page` or `database`
-- `--limit`: Max results (default: 10)
+- `--limit`: Positive integer max results (default: 10)
 
 **Returns:** JSON array of matching pages/databases with id, title, url, lastEdited
 
@@ -76,6 +76,9 @@ node scripts/query-database.js <database-id> [--filter <json>] [--sort <json>] [
 ```json
 [{"property": "Date", "direction": "descending"}]
 ```
+
+**Options:**
+- `--limit`: Positive integer max results (default: 10)
 
 ### update-page-properties.js
 
@@ -114,7 +117,7 @@ echo "page-id-1\npage-id-2" | node scripts/batch-update.js --stdin <property-nam
 - `--stdin`: read page IDs (one per line) from stdin instead of querying a database
 - `--type <type>`: `select`, `multi_select`, `checkbox`, `number`, `url`, `email`, `date`, `rich_text`
 - `--dry-run`: no writes; prints page IDs + current values to stderr and returns preview JSON
-- `--limit <n>`: max pages to process (default: 100)
+- `--limit <n>`: positive integer max pages to process (default: 100)
 
 **Behavior:**
 - Uses database `data_source_id` when available

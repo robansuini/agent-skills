@@ -10,6 +10,7 @@ const {
   notionRequest,
   extractTitle,
   stripTokenArg,
+  parsePositiveInteger,
   hasJsonFlag,
   log,
 } = require('./notion-utils.js');
@@ -55,16 +56,16 @@ async function main() {
     process.exit(0);
   }
 
-  const query = args[0];
-  let filter = null;
-  let limit = 10;
-
-  for (let i = 1; i < args.length; i++) {
-    if (args[i] === '--filter' && args[i + 1]) { filter = args[++i]; }
-    else if (args[i] === '--limit' && args[i + 1]) { limit = parseInt(args[++i]); }
-  }
-
   try {
+    const query = args[0];
+    let filter = null;
+    let limit = 10;
+
+    for (let i = 1; i < args.length; i++) {
+      if (args[i] === '--filter' && args[i + 1]) { filter = args[++i]; }
+      else if (args[i] === '--limit' && args[i + 1]) { limit = parsePositiveInteger(args[++i], '--limit'); }
+    }
+
     const results = await searchNotion(query, filter, limit);
     console.log(JSON.stringify(results, null, 2));
     log(`\n✓ Found ${results.length} result(s)`);

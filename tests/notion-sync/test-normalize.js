@@ -27,6 +27,7 @@ const {
   richTextToPlain,
   createDetailedError,
   stripTokenArg,
+  parsePositiveInteger,
   shouldRequireApiKey,
   hasJsonFlag,
   log,
@@ -727,6 +728,31 @@ assertEqual(
   'Strips --json flag'
 );
 
+// --- parsePositiveInteger ---
+console.log('\n📋 parsePositiveInteger');
+
+assertEqual(
+  parsePositiveInteger('25', '--limit'),
+  25,
+  'Parses positive integer string'
+);
+
+assertEqual(
+  parsePositiveInteger(' 7 ', '--limit'),
+  7,
+  'Trims whitespace around integer values'
+);
+
+for (const value of ['0', '-1', '1.5', 'abc', '', null]) {
+  let threw = false;
+  try {
+    parsePositiveInteger(value, '--limit');
+  } catch (err) {
+    threw = err.message === '--limit must be a positive integer';
+  }
+  assertEqual(threw, true, `Rejects invalid positive integer: ${value}`);
+}
+
 // --- shouldRequireApiKey ---
 console.log('\n📋 shouldRequireApiKey');
 
@@ -1033,6 +1059,16 @@ console.log('\n📋 batch-update argument parsing');
 {
   const parsed = parseBatchUpdateArgs(['db-123', 'Status', 'Review']);
   assertEqual(parsed.limit, DEFAULT_LIMIT, '--limit default value');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--limit', 'nope']);
+  } catch (err) {
+    threw = err.message === '--limit must be a positive integer';
+  }
+  assertEqual(threw, true, 'Batch update rejects invalid --limit');
 }
 
 // --- Summary ---
