@@ -743,7 +743,7 @@ assertEqual(
   'Trims whitespace around integer values'
 );
 
-for (const value of ['0', '-1', '1.5', 'abc', '', null]) {
+for (const value of ['0', '-1', '+1', '1.5', '1e2', 'abc', '', null, '9007199254740992']) {
   let threw = false;
   try {
     parsePositiveInteger(value, '--limit');

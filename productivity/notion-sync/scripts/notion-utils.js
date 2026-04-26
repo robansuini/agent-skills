@@ -248,9 +248,13 @@ function stripTokenArg(args) {
  */
 function parsePositiveInteger(value, flagName = 'value') {
   const normalized = String(value ?? '').trim();
-  const parsed = Number(normalized);
 
-  if (!normalized || !Number.isInteger(parsed) || parsed <= 0) {
+  if (!/^\d+$/.test(normalized)) {
+    throw new Error(`${flagName} must be a positive integer`);
+  }
+
+  const parsed = Number(normalized);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
     throw new Error(`${flagName} must be a positive integer`);
   }
 
