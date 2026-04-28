@@ -94,7 +94,7 @@ node scripts/update-page-properties.js <page-id> <property-name> <value> [--type
 - `url`: URL string
 - `email`: Email address
 - `date`: ISO date (YYYY-MM-DD)
-- `rich_text`: Plain text
+- `rich_text`: Plain text (automatically split to Notion's 2,000-character per-item limit)
 
 ### batch-update.js
 
