@@ -94,7 +94,7 @@ async function main() {
         } catch (err) {
           throw new Error(`Invalid JSON for --sort: ${err.message}`);
         }
-      } else if (args[i] === '--limit' && args[i + 1]) {
+      } else if (args[i] === '--limit') {
         limit = parsePositiveInteger(args[++i], '--limit');
       }
     }

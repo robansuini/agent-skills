@@ -63,7 +63,7 @@ async function main() {
 
     for (let i = 1; i < args.length; i++) {
       if (args[i] === '--filter' && args[i + 1]) { filter = args[++i]; }
-      else if (args[i] === '--limit' && args[i + 1]) { limit = parsePositiveInteger(args[++i], '--limit'); }
+      else if (args[i] === '--limit') { limit = parsePositiveInteger(args[++i], '--limit'); }
     }
 
     const results = await searchNotion(query, filter, limit);

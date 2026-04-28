@@ -57,7 +57,7 @@ function parseBatchUpdateArgs(args) {
       continue;
     }
 
-    if (arg === '--limit' && args[i + 1]) {
+    if (arg === '--limit') {
       options.limit = parsePositiveInteger(args[++i], '--limit');
       continue;
     }
