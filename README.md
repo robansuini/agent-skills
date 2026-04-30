@@ -180,11 +180,18 @@ Scripts require Node.js v18+ (uses built-in modules only, no npm install needed)
 
 ## Running Tests
 
-From repository root:
+From repository root, run the full local test suite:
+
+```bash
+node tests/run-all.js
+```
+
+Or run individual suites:
 
 ```bash
 node tests/leadership-prompts/test-cli.js
 node tests/notion-sync/test-normalize.js
+node tests/notion-sync/test-query-database-args.js
 ```
 
 ## Contributing
