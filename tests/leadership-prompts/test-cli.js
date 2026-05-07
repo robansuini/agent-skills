@@ -59,14 +59,29 @@ expectSuccess(['search', 'career-dev-promotion'], [
   output => output.includes('career-dev-promotion'),
 ]);
 
+expectFailure(['search'], [
+  output => output.includes('Usage:'),
+  output => output.includes('search <keyword>'),
+]);
+
 expectSuccess(['show', 'CAREER-DEV-PROMOTION'], [
   output => output.includes('ID: career-dev-promotion'),
   output => output.includes('PROMPT:'),
 ]);
 
+expectFailure(['show'], [
+  output => output.includes('Usage:'),
+  output => output.includes('show <prompt-id>'),
+]);
+
 expectSuccess(['category', 'Team Health'], [
   output => output.includes('Team Health'),
   output => output.includes('ID: team-health'),
+]);
+
+expectFailure(['category'], [
+  output => output.includes('Usage:'),
+  output => output.includes('category "Category Name"'),
 ]);
 
 expectFailure(['category', 't'], [
