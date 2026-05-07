@@ -69,6 +69,11 @@ Usage:
 `);
 }
 
+function failUsage(message) {
+  console.log(message);
+  process.exit(1);
+}
+
 const [,, command, ...args] = process.argv;
 const query = args.join(' ').trim();
 const normalizedQuery = query.toLowerCase();
@@ -102,7 +107,7 @@ switch (command) {
   }
 
   case 'search': {
-    if (!query) { console.log(`Usage: ${USAGE_CMD} search <keyword>`); break; }
+    if (!query) failUsage(`Usage: ${USAGE_CMD} search <keyword>`);
     const prompts = loadPrompts();
     const results = prompts.filter(p =>
       p.id.toLowerCase().includes(normalizedQuery) ||
@@ -118,7 +123,7 @@ switch (command) {
   }
 
   case 'show': {
-    if (!query) { console.log(`Usage: ${USAGE_CMD} show <prompt-id>`); break; }
+    if (!query) failUsage(`Usage: ${USAGE_CMD} show <prompt-id>`);
     const prompts = loadPrompts();
     const p = prompts.find(p => p.id.toLowerCase() === normalizedQuery);
     if (!p) { console.log(`No prompt with ID "${query}". Use 'list' or 'search' to find IDs.`); break; }
@@ -127,7 +132,7 @@ switch (command) {
   }
 
   case 'category': {
-    if (!query) { console.log(`Usage: ${USAGE_CMD} category "Category Name"`); break; }
+    if (!query) failUsage(`Usage: ${USAGE_CMD} category "Category Name"`);
     const prompts = loadPrompts();
     const categories = getUniqueCategories(prompts);
     const category = resolveCategoryOrExit(categories, query, normalizedQuery);
