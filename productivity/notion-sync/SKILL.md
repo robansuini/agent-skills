@@ -108,9 +108,11 @@ node scripts/search-notion.js "newsletter"
 # Find only databases
 node scripts/search-notion.js "research" --filter database
 
-# Limit results
+# Limit results (1-100)
 node scripts/search-notion.js "AI" --limit 5
 ```
+
+`--filter` accepts only `page` or `database`; `--limit` must be a positive integer from 1 to 100.
 
 **Output:**
 ```json
