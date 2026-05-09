@@ -49,7 +49,7 @@ node scripts/search-notion.js "<query>" [--filter page|database] [--limit 10] [-
 **Options:**
 - `query` (required): Search term
 - `--filter`: Restrict to `page` or `database`
-- `--limit`: Max results (default: 10)
+- `--limit`: Max results, 1-100 (default: 10)
 
 **Returns:** JSON array of matching pages/databases with id, title, url, lastEdited
 

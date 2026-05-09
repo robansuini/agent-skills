@@ -59,12 +59,23 @@ async function main() {
   let filter = null;
   let limit = 10;
 
-  for (let i = 1; i < args.length; i++) {
-    if (args[i] === '--filter' && args[i + 1]) { filter = args[++i]; }
-    else if (args[i] === '--limit' && args[i + 1]) { limit = parseInt(args[++i]); }
-  }
-
   try {
+    for (let i = 1; i < args.length; i++) {
+      if (args[i] === '--filter') {
+        if (!args[i + 1]) throw new Error('--filter requires page or database');
+        filter = args[++i];
+        if (!['page', 'database'].includes(filter)) {
+          throw new Error('--filter must be page or database');
+        }
+      } else if (args[i] === '--limit') {
+        if (!args[i + 1]) throw new Error('--limit requires a positive integer');
+        limit = Number(args[++i]);
+        if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+          throw new Error('--limit must be a positive integer between 1 and 100');
+        }
+      }
+    }
+
     const results = await searchNotion(query, filter, limit);
     console.log(JSON.stringify(results, null, 2));
     log(`\n✓ Found ${results.length} result(s)`);
