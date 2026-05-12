@@ -33,5 +33,6 @@ function expectFailure(args, expectedSubstring) {
 
 expectFailure(['page-id', 'Status', 'Done', '--type'], '--type requires a value');
 expectFailure(['page-id', 'Status', 'Done', '--type', '--json'], '--type requires a value');
+expectFailure(['page-id', 'Status', 'Done', '--type', '--unknown'], '--type requires a value');
 
 console.log('All update-page-properties arg parsing tests passed.');

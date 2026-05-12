@@ -57,7 +57,9 @@ async function main() {
   try {
     for (let i = 3; i < args.length; i++) {
       if (args[i] === '--type') {
-        if (!args[i + 1]) throw new Error('--type requires a value');
+        if (!args[i + 1] || args[i + 1].startsWith('--')) {
+          throw new Error('--type requires a value');
+        }
         propertyType = args[++i];
       }
     }
