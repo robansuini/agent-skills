@@ -175,6 +175,8 @@ node scripts/update-page-properties.js <page-id> <property-name> <value> [--type
 
 **Supported types:** select, multi_select, checkbox, number, url, email, date, rich_text
 
+Long `rich_text` values are automatically split to Notion's 2,000-character per-item limit.
+
 **Examples:**
 ```bash
 # Set status
