@@ -491,11 +491,25 @@ assertEqual(
   'Rich text formatting'
 );
 
+{
+  const result = formatPropertyValue('rich_text', 'x'.repeat(4500));
+  assertEqual(result.rich_text.length, 3, 'Long rich_text property: split into 3 chunks');
+  assertEqual(result.rich_text[0].text.content.length, 2000, 'Long rich_text property: first chunk 2000 chars');
+  assertEqual(result.rich_text[2].text.content.length, 500, 'Long rich_text property: final chunk 500 chars');
+}
+
 assertEqual(
   formatPropertyValue('title', 'My Title'),
   { title: [{ type: 'text', text: { content: 'My Title' } }] },
   'Title formatting'
 );
+
+{
+  const result = formatPropertyValue('title', 't'.repeat(2500));
+  assertEqual(result.title.length, 2, 'Long title property: split into 2 chunks');
+  assertEqual(result.title[0].text.content.length, 2000, 'Long title property: first chunk 2000 chars');
+  assertEqual(result.title[1].text.content.length, 500, 'Long title property: final chunk 500 chars');
+}
 
 {
   let threw = false;

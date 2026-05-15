@@ -49,7 +49,7 @@ node scripts/search-notion.js "<query>" [--filter page|database] [--limit 10] [-
 **Options:**
 - `query` (required): Search term
 - `--filter`: Restrict to `page` or `database`
-- `--limit`: Positive integer max results (default: 10)
+- `--limit`: Max results, 1-100 (default: 10)
 
 **Returns:** JSON array of matching pages/databases with id, title, url, lastEdited
 
@@ -97,7 +97,7 @@ node scripts/update-page-properties.js <page-id> <property-name> <value> [--type
 - `url`: URL string
 - `email`: Email address
 - `date`: ISO date (YYYY-MM-DD)
-- `rich_text`: Plain text
+- `rich_text`: Plain text (automatically split to Notion's 2,000-character per-item limit)
 
 ### batch-update.js
 

@@ -108,9 +108,11 @@ node scripts/search-notion.js "newsletter"
 # Find only databases
 node scripts/search-notion.js "research" --filter database
 
-# Limit results (positive integer)
+# Limit results (1-100)
 node scripts/search-notion.js "AI" --limit 5
 ```
+
+`--filter` accepts only `page` or `database`; `--limit` must be a positive integer from 1 to 100.
 
 **Output:**
 ```json
@@ -174,6 +176,8 @@ node scripts/update-page-properties.js <page-id> <property-name> <value> [--type
 ```
 
 **Supported types:** select, multi_select, checkbox, number, url, email, date, rich_text
+
+Long `rich_text` values are automatically split to Notion's 2,000-character per-item limit.
 
 **Examples:**
 ```bash

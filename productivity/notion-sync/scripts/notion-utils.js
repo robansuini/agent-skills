@@ -462,10 +462,10 @@ function formatPropertyValue(propertyType, value) {
     }
 
     case 'rich_text':
-      return { rich_text: [{ type: 'text', text: { content: value } }] };
+      return { rich_text: parseRichText(String(value)) };
 
     case 'title':
-      return { title: [{ type: 'text', text: { content: value } }] };
+      return { title: parseRichText(String(value)) };
 
     default:
       throw new Error(`Unsupported property type: ${propertyType}. Supported: select, multi_select, checkbox, number, url, email, date, rich_text, title`);

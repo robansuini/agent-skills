@@ -56,14 +56,32 @@ async function main() {
     process.exit(0);
   }
 
-  try {
-    const query = args[0];
-    let filter = null;
-    let limit = 10;
+  const query = args[0];
+  let filter = null;
+  let limit = 10;
 
+  try {
     for (let i = 1; i < args.length; i++) {
-      if (args[i] === '--filter' && args[i + 1]) { filter = args[++i]; }
-      else if (args[i] === '--limit') { limit = parsePositiveInteger(args[++i], '--limit'); }
+      if (args[i] === '--filter') {
+        if (!args[i + 1]) throw new Error('--filter requires page or database');
+        filter = args[++i];
+        if (!['page', 'database'].includes(filter)) {
+          throw new Error('--filter must be page or database');
+        }
+      } else if (args[i] === '--limit') {
+        const rawLimit = args[++i];
+        if (rawLimit === undefined) {
+          throw new Error('--limit must be a positive integer');
+        }
+        try {
+          limit = parsePositiveInteger(rawLimit, '--limit');
+        } catch (err) {
+          throw new Error('--limit must be a positive integer between 1 and 100');
+        }
+        if (limit > 100) {
+          throw new Error('--limit must be a positive integer between 1 and 100');
+        }
+      }
     }
 
     const results = await searchNotion(query, filter, limit);
