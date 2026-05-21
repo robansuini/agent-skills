@@ -74,6 +74,11 @@ function failUsage(message) {
   process.exit(1);
 }
 
+function failLookup(message) {
+  console.log(message);
+  process.exit(1);
+}
+
 const [,, command, ...args] = process.argv;
 const query = args.join(' ').trim();
 const normalizedQuery = query.toLowerCase();
@@ -101,7 +106,7 @@ switch (command) {
     const filtered = query
       ? prompts.filter(p => p.category.toLowerCase().includes(normalizedQuery))
       : prompts;
-    if (!filtered.length) { console.log('No prompts found.'); break; }
+    if (!filtered.length) failLookup('No prompts found.');
     printPrompt(filtered[Math.floor(Math.random() * filtered.length)]);
     break;
   }
@@ -126,7 +131,7 @@ switch (command) {
     if (!query) failUsage(`Usage: ${USAGE_CMD} show <prompt-id>`);
     const prompts = loadPrompts();
     const p = prompts.find(p => p.id.toLowerCase() === normalizedQuery);
-    if (!p) { console.log(`No prompt with ID "${query}". Use 'list' or 'search' to find IDs.`); break; }
+    if (!p) failLookup(`No prompt with ID "${query}". Use 'list' or 'search' to find IDs.`);
     printPrompt(p);
     break;
   }

@@ -74,6 +74,10 @@ expectFailure(['show'], [
   output => output.includes('show <prompt-id>'),
 ]);
 
+expectFailure(['show', 'missing-prompt-id'], [
+  output => output.includes('No prompt with ID "missing-prompt-id"'),
+]);
+
 expectSuccess(['category', 'Team Health'], [
   output => output.includes('Team Health'),
   output => output.includes('ID: team-health'),
@@ -92,6 +96,10 @@ expectFailure(['category', 't'], [
 expectSuccess(['random'], [
   output => output.includes('ID:'),
   output => output.includes('PROMPT:'),
+]);
+
+expectFailure(['random', 'not-a-category'], [
+  output => output.includes('No prompts found.'),
 ]);
 
 expectFailure(['not-a-command'], [
