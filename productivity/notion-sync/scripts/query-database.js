@@ -93,8 +93,16 @@ async function main() {
         } catch (err) {
           throw new Error(`Invalid JSON for --sort: ${err.message}`);
         }
-      } else if (args[i] === '--limit' && args[i + 1]) {
-        limit = parseInt(args[++i]);
+      } else if (args[i] === '--limit') {
+        if (!args[i + 1]) throw new Error('--limit requires a positive integer');
+        limit = Number(args[++i]);
+        if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+          throw new Error('--limit must be a positive integer between 1 and 100');
+        }
+      } else if (args[i].startsWith('-')) {
+        throw new Error(`Unknown option: ${args[i]}`);
+      } else {
+        throw new Error(`Unexpected argument: ${args[i]}`);
       }
     }
 
