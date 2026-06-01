@@ -54,11 +54,16 @@ async function main() {
   const value = args[2];
   let propertyType = 'select';
 
-  for (let i = 3; i < args.length; i++) {
-    if (args[i] === '--type' && args[i + 1]) { propertyType = args[++i]; }
-  }
-
   try {
+    for (let i = 3; i < args.length; i++) {
+      if (args[i] === '--type') {
+        if (!args[i + 1] || args[i + 1].startsWith('--')) {
+          throw new Error('--type requires a value');
+        }
+        propertyType = args[++i];
+      }
+    }
+
     const result = await updatePageProperties(pageId, propertyName, value, propertyType);
     console.log(JSON.stringify(result, null, 2));
     log('\n✓ Page updated successfully');

@@ -11,6 +11,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
 const skillScriptsDir = path.resolve(__dirname, '../../productivity/notion-sync/scripts');
 
@@ -27,6 +28,7 @@ const {
   richTextToPlain,
   createDetailedError,
   stripTokenArg,
+  parsePositiveInteger,
   shouldRequireApiKey,
   hasJsonFlag,
   log,
@@ -741,6 +743,71 @@ assertEqual(
   'Strips --json flag'
 );
 
+// --- parsePositiveInteger ---
+console.log('\n📋 parsePositiveInteger');
+
+assertEqual(
+  parsePositiveInteger('25', '--limit'),
+  25,
+  'Parses positive integer string'
+);
+
+assertEqual(
+  parsePositiveInteger(' 7 ', '--limit'),
+  7,
+  'Trims whitespace around integer values'
+);
+
+for (const value of ['0', '-1', '+1', '1.5', '1e2', 'abc', '', null, '9007199254740992']) {
+  let threw = false;
+  try {
+    parsePositiveInteger(value, '--limit');
+  } catch (err) {
+    threw = err.message === '--limit must be a positive integer';
+  }
+  assertEqual(threw, true, `Rejects invalid positive integer: ${value}`);
+}
+
+// --- missing --limit values ---
+console.log('\n📋 missing --limit values');
+
+function assertMissingLimit(scriptName, args, description) {
+  const result = spawnSync(process.execPath, [path.join(skillScriptsDir, scriptName), ...args], {
+    cwd: path.resolve(__dirname, '../..'),
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      NOTION_API_KEY: 'test-token',
+    },
+    timeout: 5000,
+  });
+
+  assertEqual(result.status, 1, `${description}: exits with failure`);
+  assert(
+    result.stdout.includes('"error": "--limit must be a positive integer"') ||
+      result.stderr.includes('--limit must be a positive integer'),
+    `${description}: reports missing limit value`
+  );
+}
+
+assertMissingLimit(
+  'search-notion.js',
+  ['query', '--limit', '--json'],
+  'search-notion rejects bare --limit before JSON flag'
+);
+
+assertMissingLimit(
+  'query-database.js',
+  ['db-123', '--limit', '--json'],
+  'query-database rejects bare --limit before JSON flag'
+);
+
+assertMissingLimit(
+  'batch-update.js',
+  ['db-123', 'Status', 'Review', '--limit', '--json'],
+  'batch-update rejects bare --limit before JSON flag'
+);
+
 // --- shouldRequireApiKey ---
 console.log('\n📋 shouldRequireApiKey');
 
@@ -1047,6 +1114,16 @@ console.log('\n📋 batch-update argument parsing');
 {
   const parsed = parseBatchUpdateArgs(['db-123', 'Status', 'Review']);
   assertEqual(parsed.limit, DEFAULT_LIMIT, '--limit default value');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--limit', 'nope']);
+  } catch (err) {
+    threw = err.message === '--limit must be a positive integer';
+  }
+  assertEqual(threw, true, 'Batch update rejects invalid --limit');
 }
 
 // --- Summary ---
