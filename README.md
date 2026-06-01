@@ -192,6 +192,7 @@ Or run individual suites:
 node tests/leadership-prompts/test-cli.js
 node tests/notion-sync/test-normalize.js
 node tests/notion-sync/test-query-database-args.js
+node tests/notion-sync/test-update-page-properties-args.js
 ```
 
 ## Contributing
