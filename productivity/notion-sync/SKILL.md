@@ -135,6 +135,8 @@ Query database contents with advanced filters and sorting.
 node scripts/query-database.js <database-id> [--filter <json>] [--sort <json>] [--limit 10] [--json]
 ```
 
+`--limit` must be a positive integer from 1 to 100.
+
 **Examples:**
 ```bash
 # Get all items
@@ -174,6 +176,8 @@ node scripts/update-page-properties.js <page-id> <property-name> <value> [--type
 ```
 
 **Supported types:** select, multi_select, checkbox, number, url, email, date, rich_text
+
+Long `rich_text` values are automatically split to Notion's 2,000-character per-item limit.
 
 **Examples:**
 ```bash
@@ -220,7 +224,7 @@ echo "page-id-1\npage-id-2\npage-id-3" | \
 
 **Features:**
 - `--dry-run`: prints pages that would be updated (with current property value) without writing
-- `--limit <n>`: max pages to process (default `100`)
+- `--limit <n>`: positive integer max pages to process (default `100`)
 - Pagination in query mode (`has_more`/`next_cursor`) up to limit
 - Rate-limit friendly updates (300ms between page updates)
 - Progress and summary on stderr, JSON result array on stdout

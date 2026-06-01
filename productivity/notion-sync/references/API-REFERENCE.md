@@ -77,6 +77,9 @@ node scripts/query-database.js <database-id> [--filter <json>] [--sort <json>] [
 [{"property": "Date", "direction": "descending"}]
 ```
 
+**Options:**
+- `--limit`: Max results, 1-100 (default: 10)
+
 ### update-page-properties.js
 
 Update database page properties.
@@ -94,7 +97,7 @@ node scripts/update-page-properties.js <page-id> <property-name> <value> [--type
 - `url`: URL string
 - `email`: Email address
 - `date`: ISO date (YYYY-MM-DD)
-- `rich_text`: Plain text
+- `rich_text`: Plain text (automatically split to Notion's 2,000-character per-item limit)
 
 ### batch-update.js
 
@@ -114,7 +117,7 @@ echo "page-id-1\npage-id-2" | node scripts/batch-update.js --stdin <property-nam
 - `--stdin`: read page IDs (one per line) from stdin instead of querying a database
 - `--type <type>`: `select`, `multi_select`, `checkbox`, `number`, `url`, `email`, `date`, `rich_text`
 - `--dry-run`: no writes; prints page IDs + current values to stderr and returns preview JSON
-- `--limit <n>`: max pages to process (default: 100)
+- `--limit <n>`: positive integer max pages to process (default: 100)
 
 **Behavior:**
 - Uses database `data_source_id` when available
