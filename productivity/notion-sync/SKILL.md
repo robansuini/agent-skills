@@ -135,7 +135,7 @@ Query database contents with advanced filters and sorting.
 node scripts/query-database.js <database-id> [--filter <json>] [--sort <json>] [--limit 10] [--json]
 ```
 
-`--limit` must be a positive integer.
+`--limit` must be a positive integer from 1 to 100.
 
 **Examples:**
 ```bash

@@ -17,6 +17,14 @@ const {
 
 checkApiKey();
 
+function parsePageSizeLimit(value) {
+  const limit = parsePositiveInteger(value, '--limit');
+  if (limit > 100) {
+    throw new Error('--limit must be a positive integer between 1 and 100');
+  }
+  return limit;
+}
+
 async function queryDatabase(databaseId, filter = null, sorts = null, pageSize = 10) {
   log(`Fetching database info: ${databaseId}`);
   const dbInfo = await notionRequest(`/v1/databases/${databaseId}`, 'GET');
@@ -95,7 +103,7 @@ async function main() {
           throw new Error(`Invalid JSON for --sort: ${err.message}`);
         }
       } else if (args[i] === '--limit') {
-        limit = parsePositiveInteger(args[++i], '--limit');
+        limit = parsePageSizeLimit(args[++i]);
       }
     }
 

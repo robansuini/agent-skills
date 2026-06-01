@@ -78,7 +78,7 @@ node scripts/query-database.js <database-id> [--filter <json>] [--sort <json>] [
 ```
 
 **Options:**
-- `--limit`: Positive integer max results (default: 10)
+- `--limit`: Max results, 1-100 (default: 10)
 
 ### update-page-properties.js
 
