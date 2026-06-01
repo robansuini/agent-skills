@@ -38,5 +38,7 @@ expectFailure(['query', '--limit'], '--limit must be a positive integer');
 expectFailure(['query', '--limit', 'abc'], '--limit must be a positive integer between 1 and 100');
 expectFailure(['query', '--limit', '0'], '--limit must be a positive integer between 1 and 100');
 expectFailure(['query', '--limit', '101'], '--limit must be a positive integer between 1 and 100');
+expectFailure(['query', '--sort', 'title'], 'Unknown option: --sort');
+expectFailure(['query', 'extra'], 'Unexpected argument: extra');
 
 console.log('All search-notion arg parsing tests passed.');
