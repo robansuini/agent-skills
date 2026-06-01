@@ -16,6 +16,7 @@ const {
   formatPropertyValue,
   extractPropertyValue,
   stripTokenArg,
+  parsePositiveInteger,
   hasJsonFlag,
   log,
 } = require('./notion-utils.js');
@@ -56,8 +57,8 @@ function parseBatchUpdateArgs(args) {
       continue;
     }
 
-    if (arg === '--limit' && args[i + 1]) {
-      options.limit = parseInt(args[++i], 10);
+    if (arg === '--limit') {
+      options.limit = parsePositiveInteger(args[++i], '--limit');
       continue;
     }
 
