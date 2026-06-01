@@ -81,6 +81,10 @@ async function main() {
         if (limit > 100) {
           throw new Error('--limit must be a positive integer between 1 and 100');
         }
+      } else if (args[i].startsWith('-')) {
+        throw new Error(`Unknown option: ${args[i]}`);
+      } else {
+        throw new Error(`Unexpected argument: ${args[i]}`);
       }
     }
 
