@@ -79,75 +79,88 @@ function failLookup(message) {
   process.exit(1);
 }
 
+function printCategoryList(prompts) {
+  const cats = getCategories(prompts);
+  console.log('\n📂 Leadership Prompt Categories:\n');
+  for (const cat of Object.keys(cats).sort((a, b) => a.localeCompare(b))) {
+    console.log(`  ${cat} (${cats[cat]} prompts)`);
+  }
+  console.log(`\n  Total: ${prompts.length} prompts`);
+  console.log(`\nUse: ${USAGE_CMD} category "Category Name"`);
+}
+
+function printRandomPrompt(prompts, query, normalizedQuery) {
+  const filtered = query
+    ? prompts.filter(p => p.category.toLowerCase().includes(normalizedQuery))
+    : prompts;
+  if (!filtered.length) failLookup('No prompts found.');
+  printPrompt(filtered[Math.floor(Math.random() * filtered.length)]);
+}
+
+function findPrompts(prompts, normalizedQuery) {
+  return prompts.filter(p =>
+    p.id.toLowerCase().includes(normalizedQuery) ||
+    p.title.toLowerCase().includes(normalizedQuery) ||
+    p.prompt.toLowerCase().includes(normalizedQuery) ||
+    p.context.toLowerCase().includes(normalizedQuery) ||
+    p.category.toLowerCase().includes(normalizedQuery)
+  );
+}
+
+function printSearchResults(prompts, query, normalizedQuery) {
+  const results = findPrompts(prompts, normalizedQuery);
+  if (!results.length) { console.log(`No prompts matching "${query}"`); return; }
+  console.log(`\n🔍 ${results.length} prompt(s) matching "${query}":\n`);
+  for (const p of results) printPrompt(p, false);
+}
+
+function printPromptById(prompts, query, normalizedQuery) {
+  const prompt = prompts.find(p => p.id.toLowerCase() === normalizedQuery);
+  if (!prompt) failLookup(`No prompt with ID "${query}". Use 'list' or 'search' to find IDs.`);
+  printPrompt(prompt);
+}
+
+function printCategoryPrompts(prompts, query, normalizedQuery) {
+  const categories = getUniqueCategories(prompts);
+  const category = resolveCategoryOrExit(categories, query, normalizedQuery);
+  const results = prompts.filter(p => p.category === category);
+  console.log(`\n📂 ${category} (${results.length} prompts):\n`);
+  for (const p of results) printPrompt(p, false);
+}
+
+function runCommand(command, query, normalizedQuery) {
+  if (command === '--help' || command === '-h') {
+    printUsage();
+    return;
+  }
+
+  switch (command) {
+    case 'list':
+      printCategoryList(loadPrompts());
+      break;
+    case 'random':
+      printRandomPrompt(loadPrompts(), query, normalizedQuery);
+      break;
+    case 'search':
+      if (!query) failUsage(`Usage: ${USAGE_CMD} search <keyword>`);
+      printSearchResults(loadPrompts(), query, normalizedQuery);
+      break;
+    case 'show':
+      if (!query) failUsage(`Usage: ${USAGE_CMD} show <prompt-id>`);
+      printPromptById(loadPrompts(), query, normalizedQuery);
+      break;
+    case 'category':
+      if (!query) failUsage(`Usage: ${USAGE_CMD} category "Category Name"`);
+      printCategoryPrompts(loadPrompts(), query, normalizedQuery);
+      break;
+    default:
+      printUsage();
+      if (command) process.exit(1);
+  }
+}
+
 const [,, command, ...args] = process.argv;
 const query = args.join(' ').trim();
 const normalizedQuery = query.toLowerCase();
 
-if (command === '--help' || command === '-h') {
-  printUsage();
-  process.exit(0);
-}
-
-switch (command) {
-  case 'list': {
-    const prompts = loadPrompts();
-    const cats = getCategories(prompts);
-    console.log('\n📂 Leadership Prompt Categories:\n');
-    for (const cat of Object.keys(cats).sort((a, b) => a.localeCompare(b))) {
-      console.log(`  ${cat} (${cats[cat]} prompts)`);
-    }
-    console.log(`\n  Total: ${prompts.length} prompts`);
-    console.log(`\nUse: ${USAGE_CMD} category "Category Name"`);
-    break;
-  }
-
-  case 'random': {
-    const prompts = loadPrompts();
-    const filtered = query
-      ? prompts.filter(p => p.category.toLowerCase().includes(normalizedQuery))
-      : prompts;
-    if (!filtered.length) failLookup('No prompts found.');
-    printPrompt(filtered[Math.floor(Math.random() * filtered.length)]);
-    break;
-  }
-
-  case 'search': {
-    if (!query) failUsage(`Usage: ${USAGE_CMD} search <keyword>`);
-    const prompts = loadPrompts();
-    const results = prompts.filter(p =>
-      p.id.toLowerCase().includes(normalizedQuery) ||
-      p.title.toLowerCase().includes(normalizedQuery) ||
-      p.prompt.toLowerCase().includes(normalizedQuery) ||
-      p.context.toLowerCase().includes(normalizedQuery) ||
-      p.category.toLowerCase().includes(normalizedQuery)
-    );
-    if (!results.length) { console.log(`No prompts matching "${query}"`); break; }
-    console.log(`\n🔍 ${results.length} prompt(s) matching "${query}":\n`);
-    for (const p of results) printPrompt(p, false);
-    break;
-  }
-
-  case 'show': {
-    if (!query) failUsage(`Usage: ${USAGE_CMD} show <prompt-id>`);
-    const prompts = loadPrompts();
-    const p = prompts.find(p => p.id.toLowerCase() === normalizedQuery);
-    if (!p) failLookup(`No prompt with ID "${query}". Use 'list' or 'search' to find IDs.`);
-    printPrompt(p);
-    break;
-  }
-
-  case 'category': {
-    if (!query) failUsage(`Usage: ${USAGE_CMD} category "Category Name"`);
-    const prompts = loadPrompts();
-    const categories = getUniqueCategories(prompts);
-    const category = resolveCategoryOrExit(categories, query, normalizedQuery);
-    const results = prompts.filter(p => p.category === category);
-    console.log(`\n📂 ${category} (${results.length} prompts):\n`);
-    for (const p of results) printPrompt(p, false);
-    break;
-  }
-
-  default:
-    printUsage();
-    if (command) process.exit(1);
-}
+runCommand(command, query, normalizedQuery);

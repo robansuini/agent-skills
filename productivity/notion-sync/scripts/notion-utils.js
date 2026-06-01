@@ -244,6 +244,24 @@ function stripTokenArg(args) {
 }
 
 /**
+ * Parse a positive integer CLI value with strict validation.
+ */
+function parsePositiveInteger(value, flagName = 'value') {
+  const normalized = String(value ?? '').trim();
+
+  if (!/^\d+$/.test(normalized)) {
+    throw new Error(`${flagName} must be a positive integer`);
+  }
+
+  const parsed = Number(normalized);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+    throw new Error(`${flagName} must be a positive integer`);
+  }
+
+  return parsed;
+}
+
+/**
  * Make a Notion API request with proper error handling
  */
 function notionRequest(path, method, data = null) {
@@ -804,6 +822,7 @@ module.exports = {
   checkApiKey,
   shouldRequireApiKey,
   stripTokenArg,
+  parsePositiveInteger,
   hasJsonFlag,
   hasHelpFlag,
   hasUnsafePathFlag,
