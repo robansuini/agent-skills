@@ -53,5 +53,10 @@ expectFailure(
 );
 expectFailure(['db-id', '--unknown'], 'Unknown option: --unknown');
 expectFailure(['db-id', 'extra'], 'Unexpected argument: extra');
+expectFailure(
+  ['db-id', '--json'],
+  '"error"',
+  'Unknown option: --json'
+);
 
 console.log('All query-database arg parsing tests passed.');
