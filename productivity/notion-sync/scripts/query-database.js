@@ -18,7 +18,17 @@ const {
 checkApiKey();
 
 function parsePageSizeLimit(value) {
-  const limit = parsePositiveInteger(value, '--limit');
+  if (value === undefined) {
+    throw new Error('--limit must be a positive integer');
+  }
+
+  let limit;
+  try {
+    limit = parsePositiveInteger(value, '--limit');
+  } catch {
+    throw new Error('--limit must be a positive integer between 1 and 100');
+  }
+
   if (limit > 100) {
     throw new Error('--limit must be a positive integer between 1 and 100');
   }
@@ -104,6 +114,10 @@ async function main() {
         }
       } else if (args[i] === '--limit') {
         limit = parsePageSizeLimit(args[++i]);
+      } else if (args[i].startsWith('-')) {
+        throw new Error(`Unknown option: ${args[i]}`);
+      } else {
+        throw new Error(`Unexpected argument: ${args[i]}`);
       }
     }
 
