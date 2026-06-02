@@ -74,6 +74,11 @@ function failUsage(message) {
   process.exit(1);
 }
 
+function failLookup(message) {
+  console.log(message);
+  process.exit(1);
+}
+
 function printCategoryList(prompts) {
   const cats = getCategories(prompts);
   console.log('\n📂 Leadership Prompt Categories:\n');
@@ -88,7 +93,7 @@ function printRandomPrompt(prompts, query, normalizedQuery) {
   const filtered = query
     ? prompts.filter(p => p.category.toLowerCase().includes(normalizedQuery))
     : prompts;
-  if (!filtered.length) { console.log('No prompts found.'); return; }
+  if (!filtered.length) failLookup('No prompts found.');
   printPrompt(filtered[Math.floor(Math.random() * filtered.length)]);
 }
 
@@ -111,7 +116,7 @@ function printSearchResults(prompts, query, normalizedQuery) {
 
 function printPromptById(prompts, query, normalizedQuery) {
   const prompt = prompts.find(p => p.id.toLowerCase() === normalizedQuery);
-  if (!prompt) { console.log(`No prompt with ID "${query}". Use 'list' or 'search' to find IDs.`); return; }
+  if (!prompt) failLookup(`No prompt with ID "${query}". Use 'list' or 'search' to find IDs.`);
   printPrompt(prompt);
 }
 
