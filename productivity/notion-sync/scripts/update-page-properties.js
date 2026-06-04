@@ -61,6 +61,10 @@ async function main() {
           throw new Error('--type requires a value');
         }
         propertyType = args[++i];
+      } else if (args[i].startsWith('-')) {
+        throw new Error(`Unknown option: ${args[i]}`);
+      } else {
+        throw new Error(`Unexpected argument: ${args[i]}`);
       }
     }
 
