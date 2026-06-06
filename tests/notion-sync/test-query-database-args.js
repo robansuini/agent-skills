@@ -39,6 +39,25 @@ function expectFailure(args, expectedSubstring, forbiddenSubstring = null) {
   }
 }
 
+function expectSuccess(args, expectedSubstring, forbiddenSubstring = null) {
+  const result = run(args);
+  const output = (result.stdout || '') + (result.stderr || '');
+
+  assert.strictEqual(result.status, 0, `Expected zero exit for: ${args.join(' ')}. Got:\n${output}`);
+  assert(
+    output.includes(expectedSubstring),
+    `Expected output to include "${expectedSubstring}". Got:\n${output}`
+  );
+
+  if (forbiddenSubstring) {
+    assert(
+      !output.includes(forbiddenSubstring),
+      `Expected output not to include "${forbiddenSubstring}". Got:\n${output}`
+    );
+  }
+}
+
+expectSuccess(['-h'], 'Usage: query-database.js', 'Fetching database info');
 expectFailure(['db-id', '--filter', '{not-json'], 'Invalid JSON for --filter');
 expectFailure(['db-id', '--sort', '{not-json'], 'Invalid JSON for --sort');
 expectFailure(['db-id', '--filter'], '--filter requires a JSON value');

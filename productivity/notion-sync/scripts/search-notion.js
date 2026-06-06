@@ -12,6 +12,7 @@ const {
   stripTokenArg,
   parsePositiveInteger,
   hasJsonFlag,
+  hasHelpFlag,
   log,
 } = require('./notion-utils.js');
 
@@ -41,7 +42,7 @@ async function searchNotion(query, filter = null, pageSize = 10) {
 async function main() {
   const args = stripTokenArg(process.argv.slice(2));
 
-  if (args.length === 0 || args[0] === '--help') {
+  if (args.length === 0 || hasHelpFlag()) {
     console.log('Usage: search-notion.js <query> [options]');
     console.log('');
     console.log('Options:');
