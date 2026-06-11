@@ -743,6 +743,37 @@ assertEqual(
   'Strips --json flag'
 );
 
+assertEqual(
+  stripTokenArg(['-h']),
+  ['--help'],
+  'Normalizes -h to --help'
+);
+
+console.log('\n📋 -h help alias');
+
+for (const scriptName of [
+  'add-to-database.js',
+  'batch-update.js',
+  'delete-notion-page.js',
+  'get-database-schema.js',
+  'md-to-notion.js',
+  'notion-to-md.js',
+  'query-database.js',
+  'search-notion.js',
+  'update-page-properties.js',
+  'watch-notion.js',
+]) {
+  const result = spawnSync(process.execPath, [path.join(skillScriptsDir, scriptName), '-h'], {
+    cwd: path.resolve(__dirname, '../..'),
+    encoding: 'utf8',
+    env: { ...process.env, NOTION_API_KEY: '' },
+  });
+  const output = (result.stdout || '') + (result.stderr || '');
+
+  assertEqual(result.status, 0, `${scriptName} exits successfully for -h`);
+  assert(output.includes('Usage:'), `${scriptName} prints usage for -h`);
+}
+
 // --- parsePositiveInteger ---
 console.log('\n📋 parsePositiveInteger');
 
