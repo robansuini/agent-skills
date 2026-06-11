@@ -32,14 +32,8 @@ function resolveToken() {
   for (let i = 2; i < args.length; i++) {
     // --token-file <path>
     if (args[i] === '--token-file' && args[i + 1]) {
-      try {
-        const tokenPath = expandHomePath(args[i + 1]);
-        _cachedToken = fs.readFileSync(tokenPath, 'utf8').trim();
-        return _cachedToken;
-      } catch (err) {
-        console.error(`Error reading token file "${args[i + 1]}": ${err.message}`);
-        process.exit(1);
-      }
+      _cachedToken = readTokenFile(args[i + 1], 'token file');
+      return _cachedToken;
     }
     // --token-stdin
     if (args[i] === '--token-stdin') {
@@ -56,13 +50,8 @@ function resolveToken() {
   // Auto-check default token file
   const defaultTokenPath = path.join(os.homedir(), '.notion-token');
   if (fs.existsSync(defaultTokenPath)) {
-    try {
-      _cachedToken = fs.readFileSync(defaultTokenPath, 'utf8').trim();
-      return _cachedToken;
-    } catch (err) {
-      console.error(`Error reading default token file "${defaultTokenPath}": ${err.message}`);
-      process.exit(1);
-    }
+    _cachedToken = readTokenFile(defaultTokenPath, 'default token file');
+    return _cachedToken;
   }
 
   // Env var fallback
@@ -73,6 +62,16 @@ function resolveToken() {
 
   _cachedToken = null;
   return null;
+}
+
+function readTokenFile(inputPath, sourceLabel) {
+  try {
+    const tokenPath = expandHomePath(inputPath);
+    return fs.readFileSync(tokenPath, 'utf8').trim();
+  } catch (err) {
+    console.error(`Error reading ${sourceLabel} "${inputPath}": ${err.message}`);
+    process.exit(1);
+  }
 }
 
 /**
