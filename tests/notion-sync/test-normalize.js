@@ -900,6 +900,38 @@ console.log('\n📋 token resolution and path expansion');
   }
 }
 
+{
+  const originalArgv = process.argv.slice();
+  const originalEnv = process.env.NOTION_API_KEY;
+  const originalHomedir = os.homedir;
+
+  const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'notion-home-'));
+  const defaultTokenFile = path.join(tempHome, '.notion-token');
+  const explicitTokenFile = path.join(tempHome, 'explicit-token');
+  fs.writeFileSync(defaultTokenFile, 'token_from_default_file\n', 'utf8');
+  fs.writeFileSync(explicitTokenFile, 'token_from_explicit_file\n', 'utf8');
+
+  process.env.NOTION_API_KEY = 'token_from_env';
+  process.argv = ['node', 'script.js', '--token-file', explicitTokenFile];
+  os.homedir = () => tempHome;
+  _resetTokenCache();
+
+  assertEqual(
+    resolveToken(),
+    'token_from_explicit_file',
+    'Explicit --token-file wins over default file and env var'
+  );
+
+  _resetTokenCache();
+  process.argv = originalArgv;
+  os.homedir = originalHomedir;
+  if (originalEnv === undefined) {
+    delete process.env.NOTION_API_KEY;
+  } else {
+    process.env.NOTION_API_KEY = originalEnv;
+  }
+}
+
 // --- resolveSafePath path safety ---
 console.log('\n📋 resolveSafePath path safety');
 
