@@ -235,6 +235,8 @@ function stripTokenArg(args) {
       // skip flag only (no value)
     } else if (args[i] === '--allow-unsafe-paths') {
       // skip flag only (no value)
+    } else if (args[i] === '-h') {
+      result.push('--help');
     } else {
       result.push(args[i]);
     }
