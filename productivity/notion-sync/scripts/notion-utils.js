@@ -446,10 +446,13 @@ function formatPropertyValue(propertyType, value) {
     }
 
     case 'number': {
-      if (typeof value !== 'number' && String(value).trim() === '') {
+      if (typeof value !== 'number' && typeof value !== 'string') {
         throw new Error('Invalid number property value: must be a finite number');
       }
-      const numberValue = typeof value === 'number' ? value : Number(String(value).trim());
+      if (typeof value === 'string' && value.trim() === '') {
+        throw new Error('Invalid number property value: must be a finite number');
+      }
+      const numberValue = typeof value === 'number' ? value : Number(value.trim());
       if (!Number.isFinite(numberValue)) {
         throw new Error('Invalid number property value: must be a finite number');
       }

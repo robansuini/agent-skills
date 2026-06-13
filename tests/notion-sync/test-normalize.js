@@ -461,14 +461,15 @@ assertEqual(
   'Number from number'
 );
 
-for (const invalidNumber of ['', 'abc', '42abc', Infinity, NaN]) {
+for (const invalidNumber of ['', 'abc', '42abc', Infinity, NaN, ['42'], { value: 42 }]) {
   let threw = false;
   try {
     formatPropertyValue('number', invalidNumber);
   } catch (e) {
     threw = e.message.includes('Invalid number property value');
   }
-  assert(threw, `Invalid number rejects ${String(invalidNumber)}`);
+  const label = typeof invalidNumber === 'number' ? String(invalidNumber) : JSON.stringify(invalidNumber);
+  assert(threw, `Invalid number rejects ${label}`);
 }
 
 assertEqual(
