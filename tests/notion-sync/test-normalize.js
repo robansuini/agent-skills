@@ -461,6 +461,16 @@ assertEqual(
   'Number from number'
 );
 
+for (const invalidNumber of ['', 'abc', '42abc', Infinity, NaN]) {
+  let threw = false;
+  try {
+    formatPropertyValue('number', invalidNumber);
+  } catch (e) {
+    threw = e.message.includes('Invalid number property value');
+  }
+  assert(threw, `Invalid number rejects ${String(invalidNumber)}`);
+}
+
 assertEqual(
   formatPropertyValue('url', 'https://example.com'),
   { url: 'https://example.com' },
