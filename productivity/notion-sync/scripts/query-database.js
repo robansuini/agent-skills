@@ -12,6 +12,7 @@ const {
   stripTokenArg,
   parsePositiveInteger,
   hasJsonFlag,
+  hasHelpFlag,
   log,
 } = require('./notion-utils.js');
 
@@ -75,7 +76,7 @@ async function queryDatabase(databaseId, filter = null, sorts = null, pageSize =
 async function main() {
   const args = stripTokenArg(process.argv.slice(2));
 
-  if (args.length === 0 || args[0] === '--help') {
+  if (args.length === 0 || hasHelpFlag()) {
     console.log('Usage: query-database.js <database-id> [options]');
     console.log('');
     console.log('Options:');

@@ -32,6 +32,25 @@ function expectFailure(args, expectedSubstring) {
   assert(!output.includes('at main'), 'Should not print a raw stack trace');
 }
 
+function expectSuccess(args, expectedSubstring, forbiddenSubstring = null) {
+  const result = run(args);
+  const output = (result.stdout || '') + (result.stderr || '');
+
+  assert.strictEqual(result.status, 0, `Expected zero exit for: ${args.join(' ')}. Got:\n${output}`);
+  assert(
+    output.includes(expectedSubstring),
+    `Expected output to include "${expectedSubstring}". Got:\n${output}`
+  );
+
+  if (forbiddenSubstring) {
+    assert(
+      !output.includes(forbiddenSubstring),
+      `Expected output not to include "${forbiddenSubstring}". Got:\n${output}`
+    );
+  }
+}
+
+expectSuccess(['-h'], 'Usage: search-notion.js', 'Searching for:');
 expectFailure(['query', '--filter'], '--filter requires page or database');
 expectFailure(['query', '--filter', 'workspace'], '--filter must be page or database');
 expectFailure(['query', '--limit'], '--limit must be a positive integer');
