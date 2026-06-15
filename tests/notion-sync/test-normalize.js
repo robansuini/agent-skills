@@ -29,6 +29,7 @@ const {
   createDetailedError,
   stripTokenArg,
   parsePositiveInteger,
+  parsePageSizeLimit,
   shouldRequireApiKey,
   hasJsonFlag,
   log,
@@ -797,6 +798,36 @@ for (const value of ['0', '-1', '+1', '1.5', '1e2', 'abc', '', null, '9007199254
     threw = err.message === '--limit must be a positive integer';
   }
   assertEqual(threw, true, `Rejects invalid positive integer: ${value}`);
+}
+
+// --- parsePageSizeLimit ---
+console.log('\n📋 parsePageSizeLimit');
+
+assertEqual(
+  parsePageSizeLimit('1'),
+  1,
+  'Accepts minimum Notion page size'
+);
+
+assertEqual(
+  parsePageSizeLimit('100'),
+  100,
+  'Accepts maximum Notion page size'
+);
+
+for (const value of [undefined, '0', '101', 'abc']) {
+  let message = null;
+  try {
+    parsePageSizeLimit(value);
+  } catch (err) {
+    message = err.message;
+  }
+
+  const expected = value === undefined
+    ? '--limit must be a positive integer'
+    : '--limit must be a positive integer between 1 and 100';
+
+  assertEqual(message, expected, `Rejects invalid Notion page size: ${value}`);
 }
 
 // --- missing --limit values ---
