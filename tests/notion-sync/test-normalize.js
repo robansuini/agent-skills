@@ -1189,6 +1189,36 @@ console.log('\n📋 batch-update argument parsing');
   assertEqual(threw, true, 'Batch update rejects invalid --limit');
 }
 
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--type']);
+  } catch (err) {
+    threw = err.message === '--type requires a value';
+  }
+  assertEqual(threw, true, 'Batch update rejects missing --type value');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--filter']);
+  } catch (err) {
+    threw = err.message === '--filter requires a JSON value';
+  }
+  assertEqual(threw, true, 'Batch update rejects missing --filter value');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--unknown']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options');
+}
+
 // --- Summary ---
 console.log(`\n${'='.repeat(50)}`);
 console.log(`Results: ${passed} passed, ${failed} failed, ${passed + failed} total`);
