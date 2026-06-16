@@ -77,7 +77,8 @@ function parseBatchUpdateArgs(args) {
       continue;
     }
 
-    if (arg.startsWith('-')) {
+    const requiredPositionals = options.stdinMode ? 2 : 3;
+    if (arg.startsWith('-') && positional.length >= requiredPositionals) {
       throw new Error(`Unknown option: ${arg}`);
     }
 

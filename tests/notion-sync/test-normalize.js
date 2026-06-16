@@ -1180,6 +1180,22 @@ console.log('\n📋 batch-update argument parsing');
 }
 
 {
+  const parsed = parseBatchUpdateArgs(['db-123', 'Score', '-1', '--type', 'number']);
+  assertEqual(parsed.value, '-1', 'Query mode allows negative number values');
+  assertEqual(parsed.propertyType, 'number', 'Query mode keeps option parsing after negative values');
+}
+
+{
+  const parsed = parseBatchUpdateArgs(['db-123', 'Status', '-blocked']);
+  assertEqual(parsed.value, '-blocked', 'Query mode allows hyphen-prefixed string values');
+}
+
+{
+  const parsed = parseBatchUpdateArgs(['--stdin', 'Status', '-blocked', '--type', 'select']);
+  assertEqual(parsed.value, '-blocked', 'stdin mode allows hyphen-prefixed values');
+}
+
+{
   let threw = false;
   try {
     parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--limit', 'nope']);
