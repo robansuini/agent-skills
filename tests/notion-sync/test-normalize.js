@@ -1235,6 +1235,36 @@ console.log('\n📋 batch-update argument parsing');
   assertEqual(threw, true, 'Batch update rejects unknown options');
 }
 
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['--unknown', 'db-123', 'Status', 'Review']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options before query positionals');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', '--unknown', 'Review']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options in query property slot');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['--stdin', '--unknown', 'Review']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options before stdin positionals');
+}
+
 // --- Summary ---
 console.log(`\n${'='.repeat(50)}`);
 console.log(`Results: ${passed} passed, ${failed} failed, ${passed + failed} total`);
