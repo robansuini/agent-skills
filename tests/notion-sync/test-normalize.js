@@ -331,6 +331,14 @@ console.log('\n📋 parseMarkdownToBlocks');
   assertEqual(blocks.length, 2, 'Paragraph grouping: adjacent lines merge');
 }
 
+{
+  const blocks = parseMarkdownToBlocks('Plain **bold** [link](https://example.com)', { richText: 'markdown' });
+  const richText = blocks[0].paragraph.rich_text;
+  assertEqual(richText.length, 4, 'Markdown rich_text mode: splits plain, bold, and link spans');
+  assertEqual(richText[1].annotations.bold, true, 'Markdown rich_text mode: preserves bold annotation');
+  assertEqual(richText[3].text.link.url, 'https://example.com', 'Markdown rich_text mode: preserves link URL');
+}
+
 // --- blocksToMarkdown ---
 console.log('\n📋 blocksToMarkdown');
 
