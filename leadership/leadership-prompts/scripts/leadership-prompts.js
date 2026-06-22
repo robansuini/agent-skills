@@ -128,35 +128,42 @@ function printCategoryPrompts(prompts, query, normalizedQuery) {
   for (const p of results) printPrompt(p, false);
 }
 
+const COMMANDS = {
+  list: {
+    run: () => printCategoryList(loadPrompts()),
+  },
+  random: {
+    run: (query, normalizedQuery) => printRandomPrompt(loadPrompts(), query, normalizedQuery),
+  },
+  search: {
+    requiredQueryUsage: `Usage: ${USAGE_CMD} search <keyword>`,
+    run: (query, normalizedQuery) => printSearchResults(loadPrompts(), query, normalizedQuery),
+  },
+  show: {
+    requiredQueryUsage: `Usage: ${USAGE_CMD} show <prompt-id>`,
+    run: (query, normalizedQuery) => printPromptById(loadPrompts(), query, normalizedQuery),
+  },
+  category: {
+    requiredQueryUsage: `Usage: ${USAGE_CMD} category "Category Name"`,
+    run: (query, normalizedQuery) => printCategoryPrompts(loadPrompts(), query, normalizedQuery),
+  },
+};
+
 function runCommand(command, query, normalizedQuery) {
   if (command === '--help' || command === '-h') {
     printUsage();
     return;
   }
 
-  switch (command) {
-    case 'list':
-      printCategoryList(loadPrompts());
-      break;
-    case 'random':
-      printRandomPrompt(loadPrompts(), query, normalizedQuery);
-      break;
-    case 'search':
-      if (!query) failUsage(`Usage: ${USAGE_CMD} search <keyword>`);
-      printSearchResults(loadPrompts(), query, normalizedQuery);
-      break;
-    case 'show':
-      if (!query) failUsage(`Usage: ${USAGE_CMD} show <prompt-id>`);
-      printPromptById(loadPrompts(), query, normalizedQuery);
-      break;
-    case 'category':
-      if (!query) failUsage(`Usage: ${USAGE_CMD} category "Category Name"`);
-      printCategoryPrompts(loadPrompts(), query, normalizedQuery);
-      break;
-    default:
-      printUsage();
-      if (command) process.exit(1);
+  const config = COMMANDS[command];
+  if (!config) {
+    printUsage();
+    if (command) process.exit(1);
+    return;
   }
+
+  if (config.requiredQueryUsage && !query) failUsage(config.requiredQueryUsage);
+  config.run(query, normalizedQuery);
 }
 
 const [,, command, ...args] = process.argv;
