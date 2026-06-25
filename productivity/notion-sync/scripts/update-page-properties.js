@@ -46,7 +46,7 @@ async function main() {
     console.log('  update-page-properties.js <id> Tags "AI,Leadership" --type multi_select');
     console.log('  update-page-properties.js <id> Published true --type checkbox');
     console.log('  update-page-properties.js <id> "Publish Date" 2024-02-01 --type date --json');
-    process.exit(0);
+    process.exit(args[0] === '--help' ? 0 : 1);
   }
 
   const pageId = args[0];
