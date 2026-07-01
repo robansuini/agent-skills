@@ -155,7 +155,9 @@ function runCommand(command, query, normalizedQuery) {
     return;
   }
 
-  const config = COMMANDS[command];
+  const config = Object.prototype.hasOwnProperty.call(COMMANDS, command)
+    ? COMMANDS[command]
+    : undefined;
   if (!config) {
     printUsage();
     if (command) process.exit(1);
