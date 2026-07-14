@@ -1170,13 +1170,36 @@ console.log('\n📋 batch-update argument parsing');
 }
 
 {
-  const parsed = parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--dry-run']);
+  const parsed = parseBatchUpdateArgs([
+    'db-123',
+    'Status',
+    'Review',
+    '--filter',
+    '{"property":"Status","select":{"equals":"Draft"}}',
+    '--dry-run',
+  ]);
   assertEqual(parsed.dryRun, true, '--dry-run flag detection');
 }
 
 {
-  const parsed = parseBatchUpdateArgs(['db-123', 'Status', 'Review']);
+  const parsed = parseBatchUpdateArgs([
+    'db-123',
+    'Status',
+    'Review',
+    '--filter',
+    '{"property":"Status","select":{"equals":"Draft"}}',
+  ]);
   assertEqual(parsed.limit, DEFAULT_LIMIT, '--limit default value');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review']);
+  } catch (err) {
+    threw = err.message === '--filter is required in query mode to avoid updating an entire database accidentally';
+  }
+  assertEqual(threw, true, 'Batch update requires --filter in query mode');
 }
 
 {

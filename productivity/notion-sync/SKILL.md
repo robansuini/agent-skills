@@ -209,6 +209,8 @@ Batch update a single property across multiple pages in one command.
 node scripts/batch-update.js <database-id> <property-name> <value> --filter '<json>' [--type select] [--dry-run] [--limit 100]
 ```
 
+Query mode requires `--filter` so the command cannot update an entire database by accident. Use stdin mode when you already have an explicit page-id list.
+
 **Example:**
 ```bash
 node scripts/batch-update.js <db-id> Status Review \

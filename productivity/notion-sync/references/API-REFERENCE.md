@@ -120,6 +120,7 @@ echo "page-id-1\npage-id-2" | node scripts/batch-update.js --stdin <property-nam
 - `--limit <n>`: positive integer max pages to process (default: 100)
 
 **Behavior:**
+- Refuses query-mode updates without `--filter` to avoid accidental whole-database changes
 - Uses database `data_source_id` when available
 - Supports query pagination (`has_more` + `next_cursor`) up to `--limit`
 - Adds 300ms delay between updates to reduce 429 rate limits
