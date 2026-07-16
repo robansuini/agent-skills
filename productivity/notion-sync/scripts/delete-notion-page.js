@@ -20,6 +20,18 @@ async function main() {
     process.exit(pageId === '--help' ? 0 : 1);
   }
 
+  if (args.length > 1) {
+    const message = args[1].startsWith('-')
+      ? `Unknown option: ${args[1]}`
+      : `Unexpected argument: ${args[1]}`;
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: message }, null, 2));
+    } else {
+      log(`Error: ${message}`);
+    }
+    process.exit(1);
+  }
+
   try {
     log(`Archiving page: ${pageId}`);
     const result = await notionRequest(`/v1/pages/${pageId}`, 'PATCH', { archived: true });

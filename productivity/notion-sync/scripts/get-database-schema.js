@@ -18,6 +18,18 @@ async function main() {
     process.exit(dbId === '--help' ? 0 : 1);
   }
 
+  if (args.length > 1) {
+    const message = args[1].startsWith('-')
+      ? `Unknown option: ${args[1]}`
+      : `Unexpected argument: ${args[1]}`;
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: message }, null, 2));
+    } else {
+      console.error('Error:', message);
+    }
+    process.exit(1);
+  }
+
   try {
     const db = await notionRequest(`/v1/databases/${dbId}`, 'GET');
     console.log(JSON.stringify(db, null, 2));
