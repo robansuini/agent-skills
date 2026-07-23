@@ -29,6 +29,7 @@ const {
   createDetailedError,
   stripTokenArg,
   parsePositiveInteger,
+  parsePageSizeLimit,
   shouldRequireApiKey,
   hasJsonFlag,
   log,
@@ -797,6 +798,30 @@ for (const value of ['0', '-1', '+1', '1.5', '1e2', 'abc', '', null, '9007199254
     threw = err.message === '--limit must be a positive integer';
   }
   assertEqual(threw, true, `Rejects invalid positive integer: ${value}`);
+}
+
+// --- parsePageSizeLimit ---
+console.log('\n📋 parsePageSizeLimit');
+
+assertEqual(
+  parsePageSizeLimit('25'),
+  25,
+  'Parses valid page-size limit'
+);
+
+for (const [value, expectedMessage] of [
+  [undefined, '--limit must be a positive integer'],
+  ['abc', '--limit must be a positive integer between 1 and 100'],
+  ['0', '--limit must be a positive integer between 1 and 100'],
+  ['101', '--limit must be a positive integer between 1 and 100'],
+]) {
+  let actualMessage = null;
+  try {
+    parsePageSizeLimit(value);
+  } catch (err) {
+    actualMessage = err.message;
+  }
+  assertEqual(actualMessage, expectedMessage, `Rejects invalid page-size limit: ${value}`);
 }
 
 // --- missing --limit values ---

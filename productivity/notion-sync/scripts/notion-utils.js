@@ -262,6 +262,25 @@ function parsePositiveInteger(value, flagName = 'value') {
   return parsed;
 }
 
+function parsePageSizeLimit(value, flagName = '--limit') {
+  if (value === undefined) {
+    throw new Error(`${flagName} must be a positive integer`);
+  }
+
+  let limit;
+  try {
+    limit = parsePositiveInteger(value, flagName);
+  } catch {
+    throw new Error(`${flagName} must be a positive integer between 1 and 100`);
+  }
+
+  if (limit > 100) {
+    throw new Error(`${flagName} must be a positive integer between 1 and 100`);
+  }
+
+  return limit;
+}
+
 /**
  * Make a Notion API request with proper error handling
  */
@@ -824,6 +843,7 @@ module.exports = {
   shouldRequireApiKey,
   stripTokenArg,
   parsePositiveInteger,
+  parsePageSizeLimit,
   hasJsonFlag,
   hasHelpFlag,
   hasUnsafePathFlag,

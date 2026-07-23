@@ -10,31 +10,13 @@ const {
   notionRequest,
   extractPropertyValue,
   stripTokenArg,
-  parsePositiveInteger,
+  parsePageSizeLimit,
   hasJsonFlag,
   hasHelpFlag,
   log,
 } = require('./notion-utils.js');
 
 checkApiKey();
-
-function parsePageSizeLimit(value) {
-  if (value === undefined) {
-    throw new Error('--limit must be a positive integer');
-  }
-
-  let limit;
-  try {
-    limit = parsePositiveInteger(value, '--limit');
-  } catch {
-    throw new Error('--limit must be a positive integer between 1 and 100');
-  }
-
-  if (limit > 100) {
-    throw new Error('--limit must be a positive integer between 1 and 100');
-  }
-  return limit;
-}
 
 async function queryDatabase(databaseId, filter = null, sorts = null, pageSize = 10) {
   log(`Fetching database info: ${databaseId}`);
