@@ -5,19 +5,20 @@
  * Usage: delete-notion-page.js <page-id>
  */
 
-const { checkApiKey, notionRequest, stripTokenArg, hasJsonFlag, log } = require('./notion-utils.js');
+const { checkApiKey, notionRequest, stripTokenArg, hasJsonFlag, hasHelpFlag, log } = require('./notion-utils.js');
 
 checkApiKey();
 
 async function main() {
   const args = stripTokenArg(process.argv.slice(2));
   const pageId = args[0];
+  const showHelp = hasHelpFlag();
 
-  if (!pageId || pageId === '--help') {
+  if (!pageId || showHelp) {
     console.log('Usage: delete-notion-page.js <page-id> [--json]');
     console.log('');
     console.log('Note: This archives the page (sets archived: true), not permanent deletion.');
-    process.exit(pageId === '--help' ? 0 : 1);
+    process.exit(showHelp ? 0 : 1);
   }
 
   if (args.length > 1) {
