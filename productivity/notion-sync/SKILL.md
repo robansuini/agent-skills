@@ -514,4 +514,4 @@ All scripts use only built-in Node.js modules (https, fs) - no external dependen
 
 ### references/
 
-- **database-patterns.md** - Common database schemas and property patterns
+- **API-REFERENCE.md** - Detailed script signatures, options, and utility behavior
