@@ -5,17 +5,18 @@
  * Usage: get-database-schema.js <database-id>
  */
 
-const { checkApiKey, notionRequest, stripTokenArg, hasJsonFlag } = require('./notion-utils.js');
+const { checkApiKey, notionRequest, stripTokenArg, hasJsonFlag, hasHelpFlag } = require('./notion-utils.js');
 
 checkApiKey();
 
 async function main() {
   const args = stripTokenArg(process.argv.slice(2));
   const dbId = args[0];
+  const showHelp = hasHelpFlag();
 
-  if (!dbId || dbId === '--help') {
+  if (!dbId || showHelp) {
     console.log('Usage: get-database-schema.js <database-id> [--json]');
-    process.exit(dbId === '--help' ? 0 : 1);
+    process.exit(showHelp ? 0 : 1);
   }
 
   if (args.length > 1) {
