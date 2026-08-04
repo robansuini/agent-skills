@@ -53,12 +53,18 @@ expectFailure('delete-notion-page.js', ['page-id', '--unknown', '--json'], '"err
 expectSuccess('delete-notion-page.js', ['page-id', '--json'], '"archived": true', {
   NODE_OPTIONS: `--require ${mockNotionApi}`,
 });
+expectSuccess('delete-notion-page.js', ['--json', 'page-id'], '"archived": true', {
+  NODE_OPTIONS: `--require ${mockNotionApi}`,
+});
 
 expectSuccess('get-database-schema.js', ['-h'], 'Usage: get-database-schema.js');
 expectFailure('get-database-schema.js', ['db-id', '--unknown'], 'Unknown option: --unknown');
 expectFailure('get-database-schema.js', ['db-id', 'extra'], 'Unexpected argument: extra');
 expectFailure('get-database-schema.js', ['db-id', 'extra', '--json'], '"error"');
 expectSuccess('get-database-schema.js', ['db-id', '--json'], '"object": "database"', {
+  NODE_OPTIONS: `--require ${mockNotionApi}`,
+});
+expectSuccess('get-database-schema.js', ['--json', 'db-id'], '"object": "database"', {
   NODE_OPTIONS: `--require ${mockNotionApi}`,
 });
 
