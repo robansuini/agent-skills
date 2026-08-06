@@ -36,7 +36,7 @@ async function updatePageProperties(pageId, propertyName, value, propertyType = 
 async function main() {
   const args = stripTokenArg(process.argv.slice(2));
 
-  if (args.length < 3 || args[0] === '--help') {
+  if (args[0] === '--help') {
     console.log('Usage: update-page-properties.js <page-id> <property-name> <value> [--type <type>] [--json]');
     console.log('');
     console.log('Supported types: select, multi_select, checkbox, number, url, email, date, rich_text');
@@ -47,6 +47,11 @@ async function main() {
     console.log('  update-page-properties.js <id> Published true --type checkbox');
     console.log('  update-page-properties.js <id> "Publish Date" 2024-02-01 --type date --json');
     process.exit(0);
+  }
+
+  if (args.length < 3) {
+    console.log('Usage: update-page-properties.js <page-id> <property-name> <value> [--type <type>] [--json]');
+    process.exit(1);
   }
 
   const pageId = args[0];
