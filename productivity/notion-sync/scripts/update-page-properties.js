@@ -11,6 +11,7 @@ const {
   formatPropertyValue,
   stripTokenArg,
   hasJsonFlag,
+  hasHelpFlag,
   log,
 } = require('./notion-utils.js');
 
@@ -36,7 +37,7 @@ async function updatePageProperties(pageId, propertyName, value, propertyType = 
 async function main() {
   const args = stripTokenArg(process.argv.slice(2));
 
-  if (args[0] === '--help') {
+  if (hasHelpFlag()) {
     console.log('Usage: update-page-properties.js <page-id> <property-name> <value> [--type <type>] [--json]');
     console.log('');
     console.log('Supported types: select, multi_select, checkbox, number, url, email, date, rich_text');
