@@ -31,12 +31,24 @@ function parseWatchArgs(args) {
   const positional = [];
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--state-file' && args[i + 1]) {
+    if (args[i] === '--state-file') {
+      if (!args[i + 1] || args[i + 1].startsWith('-')) {
+        throw new Error('--state-file requires a path');
+      }
       stateFile = expandHomePath(args[i + 1]);
       i++;
       continue;
     }
+
+    if (args[i].startsWith('-')) {
+      throw new Error(`Unknown option: ${args[i]}`);
+    }
+
     positional.push(args[i]);
+  }
+
+  if (positional.length > 2) {
+    throw new Error(`Unexpected argument: ${positional[2]}`);
   }
 
   return {
@@ -159,9 +171,40 @@ async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
 }
 
 async function main() {
-  const args = stripTokenArg(process.argv.slice(2));
   const usage = 'Usage: watch-notion.js [--state-file <path>] <page-id> <local-path> [--json] [--allow-unsafe-paths]';
-  const { pageId, localPath, stateFile } = parseWatchArgs(args);
+
+  if (hasHelpFlag()) {
+    log(usage);
+    process.exit(0);
+  }
+
+  const rawArgs = process.argv.slice(2);
+  const stateFileIndex = rawArgs.indexOf('--state-file');
+  if (stateFileIndex !== -1 && (!rawArgs[stateFileIndex + 1] || rawArgs[stateFileIndex + 1].startsWith('-'))) {
+    const message = '--state-file requires a path';
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: message }, null, 2));
+    } else {
+      log(`Error: ${message}`);
+    }
+    process.exit(1);
+  }
+
+  const args = stripTokenArg(rawArgs);
+  let parsed;
+
+  try {
+    parsed = parseWatchArgs(args);
+  } catch (error) {
+    if (hasJsonFlag()) {
+      console.log(JSON.stringify({ error: error.message }, null, 2));
+    } else {
+      log(`Error: ${error.message}`);
+    }
+    process.exit(1);
+  }
+
+  const { pageId, localPath, stateFile } = parsed;
 
   if (hasHelpFlag() || !pageId || !localPath) {
     if (hasJsonFlag()) {
