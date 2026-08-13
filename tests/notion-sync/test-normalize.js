@@ -1056,6 +1056,36 @@ console.log('\n📋 watch-notion --state-file parsing');
   os.homedir = originalHomedir;
 }
 
+for (const [args, expectedMessage] of [
+  [['--state-file'], '--state-file requires a path'],
+  [['page-id', 'local.md', '--unknown'], 'Unknown option: --unknown'],
+  [['page-id', 'local.md', 'extra'], 'Unexpected argument: extra'],
+]) {
+  let message = '';
+  try {
+    parseWatchArgs(args);
+  } catch (error) {
+    message = error.message;
+  }
+  assertEqual(message, expectedMessage, `Rejects invalid watch arguments: ${args.join(' ')}`);
+}
+
+{
+  const result = spawnSync(
+    process.execPath,
+    [path.join(skillScriptsDir, 'watch-notion.js'), '--state-file', '--json', 'page-id', 'local.md'],
+    {
+      cwd: path.resolve(__dirname, '../..'),
+      encoding: 'utf8',
+      env: { ...process.env, NOTION_API_KEY: 'test-token' },
+    }
+  );
+
+  assertEqual(result.status, 1, 'watch-notion rejects a bare --state-file before --json');
+  assert(result.stdout.includes('--state-file requires a path'), 'watch-notion reports the missing state path');
+  assert(!result.stderr.includes('Could not reach Notion API'), 'watch-notion fails before an API request');
+}
+
 // --- watch-notion state loading ---
 console.log('\n📋 watch-notion state loading');
 
