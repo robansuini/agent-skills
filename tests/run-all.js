@@ -7,6 +7,7 @@ const repoRoot = path.resolve(__dirname, '..');
 
 const tests = [
   'tests/leadership-prompts/test-cli.js',
+  'tests/notion-sync/test-add-to-database-args.js',
   'tests/notion-sync/test-normalize.js',
   'tests/notion-sync/test-query-database-args.js',
   'tests/notion-sync/test-search-notion-args.js',
