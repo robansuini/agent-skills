@@ -7,7 +7,6 @@ license: MIT-0
 metadata:
   clawdis:
     requires:
-      env: [NOTION_API_KEY]
       bins: [node]
     stateDirs: [memory]
 ---
