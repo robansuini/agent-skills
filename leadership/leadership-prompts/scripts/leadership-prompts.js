@@ -109,7 +109,7 @@ function findPrompts(prompts, normalizedQuery) {
 
 function printSearchResults(prompts, query, normalizedQuery) {
   const results = findPrompts(prompts, normalizedQuery);
-  if (!results.length) { console.log(`No prompts matching "${query}"`); return; }
+  if (!results.length) failLookup(`No prompts matching "${query}"`);
   console.log(`\n🔍 ${results.length} prompt(s) matching "${query}":\n`);
   for (const p of results) printPrompt(p, false);
 }
