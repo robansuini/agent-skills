@@ -52,7 +52,10 @@ function parseBatchUpdateArgs(args) {
       continue;
     }
 
-    if (arg === '--type' && args[i + 1]) {
+    if (arg === '--type') {
+      if (!args[i + 1] || args[i + 1].startsWith('-')) {
+        throw new Error('--type requires a value');
+      }
       options.propertyType = args[++i];
       continue;
     }
@@ -62,13 +65,21 @@ function parseBatchUpdateArgs(args) {
       continue;
     }
 
-    if (arg === '--filter' && args[i + 1]) {
+    if (arg === '--filter') {
+      if (!args[i + 1] || args[i + 1].startsWith('-')) {
+        throw new Error('--filter requires a JSON value');
+      }
       try {
         options.filter = JSON.parse(args[++i]);
       } catch (err) {
         throw new Error(`Invalid JSON for --filter: ${err.message}`);
       }
       continue;
+    }
+
+    const valuePosition = options.stdinMode ? 1 : 2;
+    if (arg.startsWith('-') && positional.length !== valuePosition) {
+      throw new Error(`Unknown option: ${arg}`);
     }
 
     positional.push(arg);

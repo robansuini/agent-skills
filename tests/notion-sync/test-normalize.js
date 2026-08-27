@@ -1222,6 +1222,22 @@ console.log('\n📋 batch-update argument parsing');
 }
 
 {
+  const parsed = parseBatchUpdateArgs(['db-123', 'Score', '-1', '--type', 'number']);
+  assertEqual(parsed.value, '-1', 'Query mode allows negative number values');
+  assertEqual(parsed.propertyType, 'number', 'Query mode keeps option parsing after negative values');
+}
+
+{
+  const parsed = parseBatchUpdateArgs(['db-123', 'Status', '-blocked']);
+  assertEqual(parsed.value, '-blocked', 'Query mode allows hyphen-prefixed string values');
+}
+
+{
+  const parsed = parseBatchUpdateArgs(['--stdin', 'Status', '-blocked', '--type', 'select']);
+  assertEqual(parsed.value, '-blocked', 'stdin mode allows hyphen-prefixed values');
+}
+
+{
   let threw = false;
   try {
     parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--limit', 'nope']);
@@ -1229,6 +1245,66 @@ console.log('\n📋 batch-update argument parsing');
     threw = err.message === '--limit must be a positive integer';
   }
   assertEqual(threw, true, 'Batch update rejects invalid --limit');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--type']);
+  } catch (err) {
+    threw = err.message === '--type requires a value';
+  }
+  assertEqual(threw, true, 'Batch update rejects missing --type value');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--filter']);
+  } catch (err) {
+    threw = err.message === '--filter requires a JSON value';
+  }
+  assertEqual(threw, true, 'Batch update rejects missing --filter value');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--unknown']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['--unknown', 'db-123', 'Status', 'Review']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options before query positionals');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', '--unknown', 'Review']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options in query property slot');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['--stdin', '--unknown', 'Review']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options before stdin positionals');
 }
 
 // --- Summary ---
