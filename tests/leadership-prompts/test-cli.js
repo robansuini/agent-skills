@@ -106,4 +106,12 @@ expectFailure(['not-a-command'], [
   output => output.includes('Usage:'),
 ]);
 
+expectFailure(['constructor'], [
+  output => output.includes('Usage:'),
+]);
+
+expectFailure(['__proto__'], [
+  output => output.includes('Usage:'),
+]);
+
 console.log('All leadership-prompts CLI tests passed.');
