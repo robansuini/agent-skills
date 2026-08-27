@@ -59,6 +59,10 @@ expectSuccess(['search', 'career-dev-promotion'], [
   output => output.includes('career-dev-promotion'),
 ]);
 
+expectFailure(['search', 'missing-prompt-id'], [
+  output => output.includes('No prompts matching "missing-prompt-id"'),
+]);
+
 expectFailure(['search'], [
   output => output.includes('Usage:'),
   output => output.includes('search <keyword>'),
