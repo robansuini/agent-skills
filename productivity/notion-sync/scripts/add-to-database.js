@@ -62,7 +62,7 @@ async function main() {
     });
 
     const markdown = fs.readFileSync(safeMdPath, 'utf8');
-    const blocks = parseMarkdownToBlocks(markdown);
+    const blocks = parseMarkdownToBlocks(markdown, { richText: 'markdown' });
     log(`Parsed ${blocks.length} blocks from markdown`);
 
     await appendBlocksBatched(page.id, blocks);
