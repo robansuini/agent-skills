@@ -89,6 +89,10 @@ function parseBatchUpdateArgs(args) {
     throw new Error('--limit must be a positive integer');
   }
 
+  if (!options.stdinMode && !options.filter) {
+    throw new Error('--filter is required in query mode to avoid updating an entire database accidentally');
+  }
+
   if (options.stdinMode) {
     return {
       ...options,
