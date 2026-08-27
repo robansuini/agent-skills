@@ -11,6 +11,7 @@ const tests = [
   'tests/notion-sync/test-normalize.js',
   'tests/notion-sync/test-query-database-args.js',
   'tests/notion-sync/test-search-notion-args.js',
+  'tests/notion-sync/test-simple-command-args.js',
   'tests/notion-sync/test-update-page-properties-args.js',
 ];
 
