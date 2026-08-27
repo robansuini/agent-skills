@@ -1,0 +1,20 @@
+# Local credentials
+.notion-token
+.env
+.env.*
+!.env.example
+
+# Dependency and test output
+node_modules/
+coverage/
+.nyc_output/
+
+# Logs and temporary files
+*.log
+tmp/
+temp/
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/

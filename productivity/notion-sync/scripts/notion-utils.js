@@ -263,6 +263,28 @@ function parsePositiveInteger(value, flagName = 'value') {
 }
 
 /**
+ * Parse a Notion page-size limit. Notion caps page sizes at 100.
+ */
+function parsePageSizeLimit(value, flagName = '--limit') {
+  if (value === undefined) {
+    throw new Error(`${flagName} must be a positive integer`);
+  }
+
+  let limit;
+  try {
+    limit = parsePositiveInteger(value, flagName);
+  } catch {
+    throw new Error(`${flagName} must be a positive integer between 1 and 100`);
+  }
+
+  if (limit > 100) {
+    throw new Error(`${flagName} must be a positive integer between 1 and 100`);
+  }
+
+  return limit;
+}
+
+/**
  * Make a Notion API request with proper error handling
  */
 function notionRequest(path, method, data = null) {
@@ -445,8 +467,19 @@ function formatPropertyValue(propertyType, value) {
       return { checkbox: boolValue };
     }
 
-    case 'number':
-      return { number: typeof value === 'number' ? value : parseFloat(value) };
+    case 'number': {
+      if (typeof value !== 'number' && typeof value !== 'string') {
+        throw new Error('Invalid number property value: must be a finite number');
+      }
+      if (typeof value === 'string' && value.trim() === '') {
+        throw new Error('Invalid number property value: must be a finite number');
+      }
+      const numberValue = typeof value === 'number' ? value : Number(value.trim());
+      if (!Number.isFinite(numberValue)) {
+        throw new Error('Invalid number property value: must be a finite number');
+      }
+      return { number: numberValue };
+    }
 
     case 'url':
       return { url: value };
@@ -824,6 +857,7 @@ module.exports = {
   shouldRequireApiKey,
   stripTokenArg,
   parsePositiveInteger,
+  parsePageSizeLimit,
   hasJsonFlag,
   hasHelpFlag,
   hasUnsafePathFlag,

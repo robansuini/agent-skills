@@ -52,7 +52,10 @@ function parseBatchUpdateArgs(args) {
       continue;
     }
 
-    if (arg === '--type' && args[i + 1]) {
+    if (arg === '--type') {
+      if (!args[i + 1] || args[i + 1].startsWith('-')) {
+        throw new Error('--type requires a value');
+      }
       options.propertyType = args[++i];
       continue;
     }
@@ -62,7 +65,10 @@ function parseBatchUpdateArgs(args) {
       continue;
     }
 
-    if (arg === '--filter' && args[i + 1]) {
+    if (arg === '--filter') {
+      if (!args[i + 1] || args[i + 1].startsWith('-')) {
+        throw new Error('--filter requires a JSON value');
+      }
       try {
         options.filter = JSON.parse(args[++i]);
       } catch (err) {
@@ -71,11 +77,25 @@ function parseBatchUpdateArgs(args) {
       continue;
     }
 
+    const valuePosition = options.stdinMode ? 1 : 2;
+    if (arg.startsWith('-') && positional.length !== valuePosition) {
+      throw new Error(`Unknown option: ${arg}`);
+    }
+
     positional.push(arg);
   }
 
   if (!Number.isInteger(options.limit) || options.limit <= 0) {
     throw new Error('--limit must be a positive integer');
+  }
+
+  const expectedPositionals = options.stdinMode ? 2 : 3;
+  if (positional.length > expectedPositionals) {
+    throw new Error(`Unexpected argument: ${positional[expectedPositionals]}`);
+  }
+
+  if (!options.stdinMode && !options.filter) {
+    throw new Error('--filter is required in query mode to avoid updating an entire database accidentally');
   }
 
   if (options.stdinMode) {

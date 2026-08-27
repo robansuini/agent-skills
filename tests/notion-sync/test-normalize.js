@@ -29,6 +29,7 @@ const {
   createDetailedError,
   stripTokenArg,
   parsePositiveInteger,
+  parsePageSizeLimit,
   shouldRequireApiKey,
   hasJsonFlag,
   log,
@@ -331,6 +332,14 @@ console.log('\n📋 parseMarkdownToBlocks');
   assertEqual(blocks.length, 2, 'Paragraph grouping: adjacent lines merge');
 }
 
+{
+  const blocks = parseMarkdownToBlocks('Plain **bold** [link](https://example.com)', { richText: 'markdown' });
+  const richText = blocks[0].paragraph.rich_text;
+  assertEqual(richText.length, 4, 'Markdown rich_text mode: splits plain, bold, and link spans');
+  assertEqual(richText[1].annotations.bold, true, 'Markdown rich_text mode: preserves bold annotation');
+  assertEqual(richText[3].text.link.url, 'https://example.com', 'Markdown rich_text mode: preserves link URL');
+}
+
 // --- blocksToMarkdown ---
 console.log('\n📋 blocksToMarkdown');
 
@@ -460,6 +469,17 @@ assertEqual(
   { number: 99 },
   'Number from number'
 );
+
+for (const invalidNumber of ['', 'abc', '42abc', Infinity, NaN, ['42'], { value: 42 }]) {
+  let threw = false;
+  try {
+    formatPropertyValue('number', invalidNumber);
+  } catch (e) {
+    threw = e.message.includes('Invalid number property value');
+  }
+  const label = typeof invalidNumber === 'number' ? String(invalidNumber) : JSON.stringify(invalidNumber);
+  assert(threw, `Invalid number rejects ${label}`);
+}
 
 assertEqual(
   formatPropertyValue('url', 'https://example.com'),
@@ -774,6 +794,24 @@ for (const scriptName of [
   assert(output.includes('Usage:'), `${scriptName} prints usage for -h`);
 }
 
+console.log('\n📋 help flag after positional args');
+
+for (const [scriptName, args] of [
+  ['add-to-database.js', ['db-123', '--help']],
+  ['md-to-notion.js', ['draft.md', '--help']],
+  ['notion-to-md.js', ['page-123', '--help']],
+]) {
+  const result = spawnSync(process.execPath, [path.join(skillScriptsDir, scriptName), ...args], {
+    cwd: path.resolve(__dirname, '../..'),
+    encoding: 'utf8',
+    env: { ...process.env, NOTION_API_KEY: '' },
+  });
+  const output = (result.stdout || '') + (result.stderr || '');
+
+  assertEqual(result.status, 0, `${scriptName} exits successfully for help after positional args`);
+  assert(output.includes('Usage:'), `${scriptName} prints usage for help after positional args`);
+}
+
 // --- parsePositiveInteger ---
 console.log('\n📋 parsePositiveInteger');
 
@@ -797,6 +835,36 @@ for (const value of ['0', '-1', '+1', '1.5', '1e2', 'abc', '', null, '9007199254
     threw = err.message === '--limit must be a positive integer';
   }
   assertEqual(threw, true, `Rejects invalid positive integer: ${value}`);
+}
+
+// --- parsePageSizeLimit ---
+console.log('\n📋 parsePageSizeLimit');
+
+assertEqual(
+  parsePageSizeLimit('1'),
+  1,
+  'Accepts minimum Notion page size'
+);
+
+assertEqual(
+  parsePageSizeLimit('100'),
+  100,
+  'Accepts maximum Notion page size'
+);
+
+for (const value of [undefined, '0', '101', 'abc']) {
+  let message = null;
+  try {
+    parsePageSizeLimit(value);
+  } catch (err) {
+    message = err.message;
+  }
+
+  const expected = value === undefined
+    ? '--limit must be a positive integer'
+    : '--limit must be a positive integer between 1 and 100';
+
+  assertEqual(message, expected, `Rejects invalid Notion page size: ${value}`);
 }
 
 // --- missing --limit values ---
@@ -1056,6 +1124,36 @@ console.log('\n📋 watch-notion --state-file parsing');
   os.homedir = originalHomedir;
 }
 
+for (const [args, expectedMessage] of [
+  [['--state-file'], '--state-file requires a path'],
+  [['page-id', 'local.md', '--unknown'], 'Unknown option: --unknown'],
+  [['page-id', 'local.md', 'extra'], 'Unexpected argument: extra'],
+]) {
+  let message = '';
+  try {
+    parseWatchArgs(args);
+  } catch (error) {
+    message = error.message;
+  }
+  assertEqual(message, expectedMessage, `Rejects invalid watch arguments: ${args.join(' ')}`);
+}
+
+{
+  const result = spawnSync(
+    process.execPath,
+    [path.join(skillScriptsDir, 'watch-notion.js'), '--state-file', '--json', 'page-id', 'local.md'],
+    {
+      cwd: path.resolve(__dirname, '../..'),
+      encoding: 'utf8',
+      env: { ...process.env, NOTION_API_KEY: 'test-token' },
+    }
+  );
+
+  assertEqual(result.status, 1, 'watch-notion rejects a bare --state-file before --json');
+  assert(result.stdout.includes('--state-file requires a path'), 'watch-notion reports the missing state path');
+  assert(!result.stderr.includes('Could not reach Notion API'), 'watch-notion fails before an API request');
+}
+
 // --- watch-notion state loading ---
 console.log('\n📋 watch-notion state loading');
 
@@ -1170,13 +1268,66 @@ console.log('\n📋 batch-update argument parsing');
 }
 
 {
-  const parsed = parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--dry-run']);
+  const parsed = parseBatchUpdateArgs([
+    'db-123',
+    'Status',
+    'Review',
+    '--filter',
+    '{"property":"Status","select":{"equals":"Draft"}}',
+    '--dry-run',
+  ]);
   assertEqual(parsed.dryRun, true, '--dry-run flag detection');
 }
 
 {
-  const parsed = parseBatchUpdateArgs(['db-123', 'Status', 'Review']);
+  const parsed = parseBatchUpdateArgs([
+    'db-123',
+    'Status',
+    'Review',
+    '--filter',
+    '{"property":"Status","select":{"equals":"Draft"}}',
+  ]);
   assertEqual(parsed.limit, DEFAULT_LIMIT, '--limit default value');
+}
+
+{
+  const parsed = parseBatchUpdateArgs([
+    'db-123',
+    'Score',
+    '-1',
+    '--type',
+    'number',
+    '--filter',
+    '{"property":"Score","number":{"greater_than":0}}',
+  ]);
+  assertEqual(parsed.value, '-1', 'Query mode allows negative number values');
+  assertEqual(parsed.propertyType, 'number', 'Query mode keeps option parsing after negative values');
+}
+
+{
+  const parsed = parseBatchUpdateArgs([
+    'db-123',
+    'Status',
+    '-blocked',
+    '--filter',
+    '{"property":"Status","select":{"equals":"Draft"}}',
+  ]);
+  assertEqual(parsed.value, '-blocked', 'Query mode allows hyphen-prefixed string values');
+}
+
+{
+  const parsed = parseBatchUpdateArgs(['--stdin', 'Status', '-blocked', '--type', 'select']);
+  assertEqual(parsed.value, '-blocked', 'stdin mode allows hyphen-prefixed values');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review']);
+  } catch (err) {
+    threw = err.message === '--filter is required in query mode to avoid updating an entire database accidentally';
+  }
+  assertEqual(threw, true, 'Batch update requires --filter in query mode');
 }
 
 {
@@ -1187,6 +1338,97 @@ console.log('\n📋 batch-update argument parsing');
     threw = err.message === '--limit must be a positive integer';
   }
   assertEqual(threw, true, 'Batch update rejects invalid --limit');
+}
+
+for (const [args, expectedMessage, description] of [
+  [
+    ['db-123', 'Status', 'Review', '--dryrun'],
+    'Unknown option: --dryrun',
+    'Batch update rejects unknown options',
+  ],
+  [
+    ['db-123', 'Status', 'Review', 'extra'],
+    'Unexpected argument: extra',
+    'Batch update rejects extra positional arguments',
+  ],
+  [
+    ['db-123', 'Status', 'Review', '--type'],
+    '--type requires a value',
+    'Batch update rejects missing --type value',
+  ],
+  [
+    ['db-123', 'Status', 'Review', '--filter', '--dry-run'],
+    '--filter requires a JSON value',
+    'Batch update rejects missing --filter value',
+  ],
+]) {
+  let message = null;
+  try {
+    parseBatchUpdateArgs(args);
+  } catch (err) {
+    message = err.message;
+  }
+  assertEqual(message, expectedMessage, description);
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--type']);
+  } catch (err) {
+    threw = err.message === '--type requires a value';
+  }
+  assertEqual(threw, true, 'Batch update rejects missing --type value');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--filter']);
+  } catch (err) {
+    threw = err.message === '--filter requires a JSON value';
+  }
+  assertEqual(threw, true, 'Batch update rejects missing --filter value');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', 'Status', 'Review', '--unknown']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['--unknown', 'db-123', 'Status', 'Review']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options before query positionals');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['db-123', '--unknown', 'Review']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options in query property slot');
+}
+
+{
+  let threw = false;
+  try {
+    parseBatchUpdateArgs(['--stdin', '--unknown', 'Review']);
+  } catch (err) {
+    threw = err.message === 'Unknown option: --unknown';
+  }
+  assertEqual(threw, true, 'Batch update rejects unknown options before stdin positionals');
 }
 
 // --- Summary ---

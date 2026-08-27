@@ -23,13 +23,14 @@ checkApiKey();
 
 async function main() {
   const args = stripTokenArg(process.argv.slice(2));
+  const isHelp = hasHelpFlag();
 
-  if (args.length < 3 || hasHelpFlag()) {
+  if (isHelp || args.length < 3) {
     console.log('Usage: md-to-notion.js <markdown-file> <parent-page-id> <page-title> [--json] [--allow-unsafe-paths]');
     console.log('');
     console.log('Example:');
     console.log('  md-to-notion.js draft.md "abc123..." "Newsletter Draft" --json');
-    process.exit(hasHelpFlag() ? 0 : 1);
+    process.exit(isHelp ? 0 : 1);
   }
 
   const unknownOption = args.find(arg => arg.startsWith('-'));

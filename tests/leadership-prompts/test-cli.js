@@ -98,11 +98,25 @@ expectSuccess(['random'], [
   output => output.includes('PROMPT:'),
 ]);
 
+expectSuccess(['random', 'Team Health'], [
+  output => output.includes('Category: Team Health'),
+  output => output.includes('ID:'),
+  output => output.includes('PROMPT:'),
+]);
+
 expectFailure(['random', 'not-a-category'], [
   output => output.includes('No prompts found.'),
 ]);
 
 expectFailure(['not-a-command'], [
+  output => output.includes('Usage:'),
+]);
+
+expectFailure(['constructor'], [
+  output => output.includes('Usage:'),
+]);
+
+expectFailure(['__proto__'], [
   output => output.includes('Usage:'),
 ]);
 

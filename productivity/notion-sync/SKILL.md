@@ -7,7 +7,6 @@ license: MIT-0
 metadata:
   clawdis:
     requires:
-      env: [NOTION_API_KEY]
       bins: [node]
     stateDirs: [memory]
 ---
@@ -208,6 +207,8 @@ Batch update a single property across multiple pages in one command.
 ```bash
 node scripts/batch-update.js <database-id> <property-name> <value> --filter '<json>' [--type select] [--dry-run] [--limit 100]
 ```
+
+Query mode requires `--filter` so the command cannot update an entire database by accident. Use stdin mode when you already have an explicit page-id list.
 
 **Example:**
 ```bash
@@ -514,4 +515,4 @@ All scripts use only built-in Node.js modules (https, fs) - no external dependen
 
 ### references/
 
-- **database-patterns.md** - Common database schemas and property patterns
+- **API-REFERENCE.md** - Detailed script signatures, options, and utility behavior
