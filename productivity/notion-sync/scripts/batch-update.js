@@ -89,6 +89,11 @@ function parseBatchUpdateArgs(args) {
     throw new Error('--limit must be a positive integer');
   }
 
+  const expectedPositionals = options.stdinMode ? 2 : 3;
+  if (positional.length > expectedPositionals) {
+    throw new Error(`Unexpected argument: ${positional[expectedPositionals]}`);
+  }
+
   if (!options.stdinMode && !options.filter) {
     throw new Error('--filter is required in query mode to avoid updating an entire database accidentally');
   }

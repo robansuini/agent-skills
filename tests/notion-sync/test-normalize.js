@@ -1340,6 +1340,37 @@ console.log('\n📋 batch-update argument parsing');
   assertEqual(threw, true, 'Batch update rejects invalid --limit');
 }
 
+for (const [args, expectedMessage, description] of [
+  [
+    ['db-123', 'Status', 'Review', '--dryrun'],
+    'Unknown option: --dryrun',
+    'Batch update rejects unknown options',
+  ],
+  [
+    ['db-123', 'Status', 'Review', 'extra'],
+    'Unexpected argument: extra',
+    'Batch update rejects extra positional arguments',
+  ],
+  [
+    ['db-123', 'Status', 'Review', '--type'],
+    '--type requires a value',
+    'Batch update rejects missing --type value',
+  ],
+  [
+    ['db-123', 'Status', 'Review', '--filter', '--dry-run'],
+    '--filter requires a JSON value',
+    'Batch update rejects missing --filter value',
+  ],
+]) {
+  let message = null;
+  try {
+    parseBatchUpdateArgs(args);
+  } catch (err) {
+    message = err.message;
+  }
+  assertEqual(message, expectedMessage, description);
+}
+
 {
   let threw = false;
   try {
