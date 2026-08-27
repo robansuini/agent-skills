@@ -34,8 +34,9 @@ function failArgument(message) {
 
 async function main() {
   const args = stripTokenArg(process.argv.slice(2));
+  const isHelp = args.includes('--help');
 
-  if (args[0] === '--help') {
+  if (isHelp) {
     printUsage();
     process.exit(0);
   }
@@ -86,7 +87,7 @@ async function main() {
     });
 
     const markdown = fs.readFileSync(safeMdPath, 'utf8');
-    const blocks = parseMarkdownToBlocks(markdown);
+    const blocks = parseMarkdownToBlocks(markdown, { richText: 'markdown' });
     log(`Parsed ${blocks.length} blocks from markdown`);
 
     await appendBlocksBatched(page.id, blocks);

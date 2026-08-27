@@ -1,18 +1,24 @@
 #!/usr/bin/env node
 
 const { spawnSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..');
 
-const tests = [
-  'tests/leadership-prompts/test-cli.js',
-  'tests/notion-sync/test-add-to-database-args.js',
-  'tests/notion-sync/test-normalize.js',
-  'tests/notion-sync/test-query-database-args.js',
-  'tests/notion-sync/test-search-notion-args.js',
-  'tests/notion-sync/test-update-page-properties-args.js',
-];
+function discoverTests(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(directory, entry.name);
+
+    if (entry.isDirectory()) return discoverTests(entryPath);
+    if (entry.isFile() && /^test-.*\.js$/.test(entry.name)) return [entryPath];
+    return [];
+  });
+}
+
+const tests = discoverTests(__dirname)
+  .map((test) => path.relative(repoRoot, test))
+  .sort();
 
 for (const test of tests) {
   console.log(`\n▶ ${test}`);
