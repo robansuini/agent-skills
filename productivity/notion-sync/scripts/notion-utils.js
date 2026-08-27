@@ -445,8 +445,19 @@ function formatPropertyValue(propertyType, value) {
       return { checkbox: boolValue };
     }
 
-    case 'number':
-      return { number: typeof value === 'number' ? value : parseFloat(value) };
+    case 'number': {
+      if (typeof value !== 'number' && typeof value !== 'string') {
+        throw new Error('Invalid number property value: must be a finite number');
+      }
+      if (typeof value === 'string' && value.trim() === '') {
+        throw new Error('Invalid number property value: must be a finite number');
+      }
+      const numberValue = typeof value === 'number' ? value : Number(value.trim());
+      if (!Number.isFinite(numberValue)) {
+        throw new Error('Invalid number property value: must be a finite number');
+      }
+      return { number: numberValue };
+    }
 
     case 'url':
       return { url: value };
