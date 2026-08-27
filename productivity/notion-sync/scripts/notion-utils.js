@@ -263,6 +263,28 @@ function parsePositiveInteger(value, flagName = 'value') {
 }
 
 /**
+ * Parse a Notion page-size limit. Notion caps page sizes at 100.
+ */
+function parsePageSizeLimit(value, flagName = '--limit') {
+  if (value === undefined) {
+    throw new Error(`${flagName} must be a positive integer`);
+  }
+
+  let limit;
+  try {
+    limit = parsePositiveInteger(value, flagName);
+  } catch {
+    throw new Error(`${flagName} must be a positive integer between 1 and 100`);
+  }
+
+  if (limit > 100) {
+    throw new Error(`${flagName} must be a positive integer between 1 and 100`);
+  }
+
+  return limit;
+}
+
+/**
  * Make a Notion API request with proper error handling
  */
 function notionRequest(path, method, data = null) {
@@ -835,6 +857,7 @@ module.exports = {
   shouldRequireApiKey,
   stripTokenArg,
   parsePositiveInteger,
+  parsePageSizeLimit,
   hasJsonFlag,
   hasHelpFlag,
   hasUnsafePathFlag,
