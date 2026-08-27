@@ -794,6 +794,24 @@ for (const scriptName of [
   assert(output.includes('Usage:'), `${scriptName} prints usage for -h`);
 }
 
+console.log('\n📋 help flag after positional args');
+
+for (const [scriptName, args] of [
+  ['add-to-database.js', ['db-123', '--help']],
+  ['md-to-notion.js', ['draft.md', '--help']],
+  ['notion-to-md.js', ['page-123', '--help']],
+]) {
+  const result = spawnSync(process.execPath, [path.join(skillScriptsDir, scriptName), ...args], {
+    cwd: path.resolve(__dirname, '../..'),
+    encoding: 'utf8',
+    env: { ...process.env, NOTION_API_KEY: '' },
+  });
+  const output = (result.stdout || '') + (result.stderr || '');
+
+  assertEqual(result.status, 0, `${scriptName} exits successfully for help after positional args`);
+  assert(output.includes('Usage:'), `${scriptName} prints usage for help after positional args`);
+}
+
 // --- parsePositiveInteger ---
 console.log('\n📋 parsePositiveInteger');
 
