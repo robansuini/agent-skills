@@ -10,7 +10,7 @@ const {
   notionRequest,
   extractTitle,
   stripTokenArg,
-  parsePositiveInteger,
+  parsePageSizeLimit,
   hasJsonFlag,
   hasHelpFlag,
   log,
@@ -70,18 +70,7 @@ async function main() {
           throw new Error('--filter must be page or database');
         }
       } else if (args[i] === '--limit') {
-        const rawLimit = args[++i];
-        if (rawLimit === undefined) {
-          throw new Error('--limit must be a positive integer');
-        }
-        try {
-          limit = parsePositiveInteger(rawLimit, '--limit');
-        } catch (err) {
-          throw new Error('--limit must be a positive integer between 1 and 100');
-        }
-        if (limit > 100) {
-          throw new Error('--limit must be a positive integer between 1 and 100');
-        }
+        limit = parsePageSizeLimit(args[++i]);
       } else if (args[i].startsWith('-')) {
         throw new Error(`Unknown option: ${args[i]}`);
       } else {

@@ -33,13 +33,14 @@ function extractPageTitle(page) {
 
 async function main() {
   const args = stripTokenArg(process.argv.slice(2));
+  const isHelp = args.includes('--help');
 
-  if (args.length < 1 || args[0] === '--help') {
+  if (isHelp || args.length < 1) {
     console.log('Usage: notion-to-md.js <page-id> [output-file] [--json] [--allow-unsafe-paths]');
     console.log('');
     console.log('Example:');
     console.log('  notion-to-md.js "abc123..." newsletter.md --json');
-    process.exit(args[0] === '--help' ? 0 : 1);
+    process.exit(isHelp ? 0 : 1);
   }
 
   const pageId = normalizeId(args[0]);
