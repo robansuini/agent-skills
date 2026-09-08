@@ -122,11 +122,19 @@ for (const args of [
     assert.equal(current.requests.length, 0, 'must fail before network activity');
   }
 
-  const plaintext = fixture({
-    env: { ...env, NOTION_API_KEY: 'plaintext-test-value' },
+  const portable = fixture({
+    env: { NOTION_API_KEY: 'secret-manager-test-value' },
+    version: '18.20.0',
   });
-  await assert.rejects(plaintext.api.notionRequest('/v1/users/me', 'GET'), /Plaintext environment values/);
-  assert.equal(plaintext.requests.length, 0, 'plaintext credentials must fail before network activity');
+  assert.equal((await portable.api.notionRequest('/v1/users/me', 'GET')).object, 'user');
+  assert.equal(portable.requests[0].headers.Authorization, 'Bearer secret-manager-test-value');
+  assert.equal(portable.requests[0].agent, undefined, 'portable credentials use normal HTTPS transport');
+
+  const malformedSentinel = fixture({
+    env: { ...env, NOTION_API_KEY: 'oc-sent-v2.incomplete' },
+  });
+  await assert.rejects(malformedSentinel.api.notionRequest('/v1/users/me', 'GET'), /valid NOTION_API_KEY sentinel/);
+  assert.equal(malformedSentinel.requests.length, 0, 'malformed sentinels must fail before network activity');
 
   const rejected = fixture({ env, status: 401 });
   await assert.rejects(rejected.api.notionRequest('/v1/users/me', 'GET'), /Authentication failed/);

@@ -1,6 +1,6 @@
 ---
 name: notion-sync
-description: Bi-directional Notion page and database sync using OpenClaw protected secrets. Use for markdown sync, change monitoring, search, queries, and property updates without exposing a Notion credential to chat, files, commands, or agent context.
+description: Bi-directional Notion page and database sync. Use for markdown sync, change monitoring, search, queries, and property updates with credentials supplied by the host runtime's secret manager.
 homepage: https://github.com/robansuini/agent-skills
 license: MIT-0
 metadata:
@@ -21,22 +21,29 @@ Bi-directional sync between markdown files and Notion pages, plus database manag
 ## Upgrading
 
 **v3.0 is a breaking security release.** It removes `--token-file`,
-`--token-stdin`, and automatic `~/.notion-token` loading. The scripts now
-use only the run-scoped `NOTION_API_KEY` supplied by OpenClaw.
+`--token-stdin`, and automatic `~/.notion-token` loading. The scripts now use
+only `NOTION_API_KEY`, supplied by the host runtime's secret manager.
 
 Read [references/MIGRATION-V3.md](references/MIGRATION-V3.md) before upgrading
-from any v1 or v2 release. Keep v2.5.3 pinned until the protected secret and
-Gateway egress proxy are configured and verified.
+from any v1 or v2 release. Keep v2.5.3 pinned until the replacement secret
+injection is configured and verified.
 
 ## Requirements
 
-- **OpenClaw** 2026.9.1 or later with the `secrets` tool
-- **Node.js** 22.21+ in the 22.x line, 24.5+ in the 24.x line, or 25+
-- Gateway-hosted execution; protected secrets are not injected into sandbox,
-  native harness shell, ACP, or remote-node execution
+- **Node.js** 18 or later
 - A **Notion integration token** (starts with `ntn_` or `secret_`)
+- A runtime or secret manager that injects `NOTION_API_KEY`
 
 ## Credential workflow
+
+Supply `NOTION_API_KEY` through your platform's secret manager. Do not place
+the token in chat, source control, command arguments, URLs, or committed `.env`
+files. The scripts do not depend on a particular agent runtime.
+
+### OpenClaw protected-secret mode
+
+OpenClaw users should use version 2026.9.1 or later and its protected-secret
+egress workflow:
 
 Before the first Notion API operation in a run:
 
@@ -59,22 +66,22 @@ Before the first Notion API operation in a run:
 
 1. Go to https://www.notion.so/my-integrations
 2. Create a new integration (or use an existing one)
-3. Save the Internal Integration Token through OpenClaw's masked secret prompt
-   or **Settings → Secrets** as a **Protected secret** named
-   `NOTION_API_KEY`, allowed only for `api.notion.com`.
-4. Enable the secret egress proxy and restart the Gateway:
+3. Share your Notion pages/databases with the integration through the page's
+   **Connections** menu.
+4. Save the token as `NOTION_API_KEY` through your runtime's secret manager.
+
+For OpenClaw, save it through the masked prompt or **Settings → Secrets** as a
+protected secret allowed only for `api.notion.com`, then enable protected
+egress and restart the Gateway:
    ```bash
    openclaw config set secrets.egressProxy.enabled true --strict-json
    openclaw gateway restart
    ```
-5. Share your Notion pages/databases with the integration:
-   - Open the page/database in Notion
-   - Click "Share" → "Invite"
-   - Select your integration
 
-The skill never needs the plaintext token. A missing proxy, missing host binding,
-or unavailable secret must fail closed; do not fall back to files, stdin, shell
-exports, command arguments, URLs, or chat.
+When OpenClaw supplies a protected sentinel, a missing proxy, CA, host binding,
+or compatible Node runtime fails closed. This protected mode requires Node.js
+22.21+ in the 22.x line, 24.5+ in the 24.x line, or 25+. Ordinary environment
+credentials use the portable direct-HTTPS path on Node.js 18+.
 
 ## JSON Output Mode
 

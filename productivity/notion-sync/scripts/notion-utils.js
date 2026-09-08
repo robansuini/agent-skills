@@ -16,9 +16,9 @@ let _cachedToken = undefined;
 /**
  * Resolve the Notion API token from the process environment.
  *
- * In v3 OpenClaw injects NOTION_API_KEY as an opaque protected-store sentinel
- * for Gateway-hosted execution. The real credential is substituted only when
- * fetch sends the request to api.notion.com.
+ * Runtimes provide NOTION_API_KEY through their preferred secret manager.
+ * OpenClaw may inject an opaque protected-store sentinel; the real credential
+ * is then substituted only when the request reaches api.notion.com.
  */
 function resolveToken() {
   if (_cachedToken !== undefined) return _cachedToken;
@@ -29,12 +29,12 @@ function resolveToken() {
 
 const LEGACY_TOKEN_FLAGS = new Set(['--token', '--token-file', '--token-stdin']);
 const TOKEN_MIGRATION_MESSAGE =
-  'notion-sync v3 no longer accepts CLI or file-based tokens. Store NOTION_API_KEY ' +
-  'as an OpenClaw protected secret allowed only for api.notion.com, then run the ' +
-  'skill through Gateway-hosted exec. See references/MIGRATION-V3.md.';
+  'notion-sync v3 no longer accepts CLI or file-based tokens. Supply NOTION_API_KEY ' +
+  'through your runtime\'s secret manager. OpenClaw users should use a protected ' +
+  'secret allowed only for api.notion.com. See references/MIGRATION-V3.md.';
 const PROTECTED_SECRET_MESSAGE =
-  'notion-sync v3 requires an OpenClaw protected NOTION_API_KEY and Gateway-hosted ' +
-  'exec with the secret egress proxy. Plaintext environment values are not supported.';
+  'Protected OpenClaw credentials require a valid NOTION_API_KEY sentinel and ' +
+  'Gateway-hosted exec with the secret egress proxy.';
 
 function findLegacyTokenFlag(args = process.argv.slice(2)) {
   for (const arg of args) {
@@ -50,8 +50,12 @@ function supportsNativeProxy(nodeVersion = process.versions.node) {
   return major >= 25 || (major === 24 && minor >= 5) || (major === 22 && minor >= 21);
 }
 
+function isProtectedCredential(apiKey) {
+  return apiKey.startsWith('oc-sent-v2.') && apiKey.endsWith('.end');
+}
+
 function createProtectedProxyAgent(apiKey, env = process.env, nodeVersion = process.versions.node) {
-  if (!apiKey.startsWith('oc-sent-v2.') || !apiKey.endsWith('.end')) {
+  if (!isProtectedCredential(apiKey)) {
     throw new Error(PROTECTED_SECRET_MESSAGE);
   }
 
@@ -65,6 +69,11 @@ function createProtectedProxyAgent(apiKey, env = process.env, nodeVersion = proc
   return new https.Agent({
     proxyEnv: { HTTPS_PROXY: env.HTTPS_PROXY },
   });
+}
+
+function createRequestAgent(apiKey, env = process.env, nodeVersion = process.versions.node) {
+  if (!apiKey.startsWith('oc-sent-v2.')) return undefined;
+  return createProtectedProxyAgent(apiKey, env, nodeVersion);
 }
 
 /**
@@ -284,9 +293,9 @@ function notionRequest(path, method, data = null) {
     return Promise.reject(new Error(`No Notion API token found. ${TOKEN_MIGRATION_MESSAGE}`));
   }
 
-  let proxyAgent;
+  let requestAgent;
   try {
-    proxyAgent = createProtectedProxyAgent(apiKey);
+    requestAgent = createRequestAgent(apiKey);
   } catch (err) {
     return Promise.reject(err);
   }
@@ -298,7 +307,6 @@ function notionRequest(path, method, data = null) {
       port: 443,
       path,
       method,
-      agent: proxyAgent,
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Notion-Version': NOTION_VERSION,
@@ -306,6 +314,7 @@ function notionRequest(path, method, data = null) {
       },
     };
 
+    if (requestAgent) options.agent = requestAgent;
     if (requestData) options.headers['Content-Length'] = Buffer.byteLength(requestData);
 
     const req = https.request(options, (res) => {
@@ -851,7 +860,9 @@ module.exports = {
   TOKEN_MIGRATION_MESSAGE,
   PROTECTED_SECRET_MESSAGE,
   supportsNativeProxy,
+  isProtectedCredential,
   createProtectedProxyAgent,
+  createRequestAgent,
   stripTokenArg,
   parsePositiveInteger,
   parsePageSizeLimit,
