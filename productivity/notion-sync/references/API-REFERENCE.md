@@ -2,23 +2,26 @@
 
 Detailed technical reference for all Notion sync scripts and utilities.
 
-## Environment Setup
+## Credential setup
 
 ### Notion Token
 
-All scripts require a Notion integration token. Supported sources (priority order):
+All scripts require `NOTION_API_KEY`, supplied through the host runtime's
+secret manager. The portable client uses direct HTTPS and supports Node.js 18+.
 
-1. `--token-file <path>` (supports `~` expansion)
-2. `--token-stdin` (pipe token through stdin)
-3. `~/.notion-token` (auto-detected if present)
-4. `NOTION_API_KEY` env var
+With OpenClaw, use its protected secret workflow:
 
-```bash
-node scripts/search-notion.js "query" --token-file ~/.notion-token
-# or
+1. List secret metadata with the `secrets` tool.
+2. If missing, request `NOTION_API_KEY` as `kind: secret` with
+   `allowedHosts: ["api.notion.com"]`.
+3. Run the script with Gateway-hosted exec after the secret exists.
 
-echo "$NOTION_API_KEY" | node scripts/search-notion.js "query" --token-stdin
-```
+OpenClaw injects an opaque environment sentinel. The scripts detect it and use
+the Gateway proxy, allowing substitution only for `https://api.notion.com`.
+Never inspect or print the environment variable.
+
+Removed in v3: `--token`, `--token-file`, `--token-stdin`, and automatic
+`~/.notion-token` loading. See [MIGRATION-V3.md](MIGRATION-V3.md).
 
 ## JSON Output Mode
 
@@ -229,10 +232,16 @@ Makes authenticated API requests to Notion.
 - `method`: HTTP method (GET, POST, PATCH, DELETE)
 - `body`: Optional request body (object)
 
+**Transport:** direct Node.js `https.request` by default. When an OpenClaw
+protected sentinel is detected, the request uses a native proxy-aware
+`https.Agent`. That agent receives only the Gateway-provided `HTTPS_PROXY`
+value, so inherited `NO_PROXY` or lowercase proxy overrides cannot bypass
+protected-secret egress.
+
 **Returns:** Promise resolving to response JSON
 
 **Error Handling:** Throws actionable messages for common failures:
-- Missing token: guidance for `--token-file`, `--token-stdin`, and `NOTION_API_KEY`
+- Missing token: guidance for the runtime-neutral `NOTION_API_KEY` migration
 - 401: authentication/access guidance
 - 404: page/database access/id guidance
 - Network errors: connectivity guidance
@@ -271,7 +280,9 @@ Notion API limits:
 **Solutions:**
 1. Verify page/database is shared with your integration
 2. Check page ID format (32 chars, no extra characters)
-3. Confirm your integration token is valid and available via --token-file, --token-stdin, ~/.notion-token, or NOTION_API_KEY
+3. Confirm `NOTION_API_KEY` is available through your runtime's secret manager.
+   With OpenClaw, also confirm it is protected, bound to `api.notion.com`, and
+   running through Gateway-hosted exec.
 
 ### Property Update Failures
 
@@ -283,9 +294,11 @@ Notion API limits:
 
 ### Module Not Found
 
-**Error:** `Cannot find module 'https'`
+**Error:** protected-secret proxy support is unavailable
 
-**Solution:** Ensure using Node.js v18+ (built-in modules)
+**Solution:** This applies only when an OpenClaw protected sentinel is present.
+Use Node.js 22.21+ (22.x), 24.5+ (24.x), or 25+, and run through OpenClaw
+Gateway-hosted exec with the egress proxy enabled.
 
 ## Page ID Extraction
 
