@@ -166,10 +166,6 @@ function hasHelpFlag() {
   return process.argv.includes('--help') || process.argv.includes('-h');
 }
 
-function hasUnsafePathFlag() {
-  return process.argv.includes('--allow-unsafe-paths');
-}
-
 function log(msg) {
   if (!hasJsonFlag()) console.error(msg);
 }
@@ -179,16 +175,24 @@ function isPathInside(baseDir, targetPath) {
   return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
-function resolveSafePath(inputPath, options = {}) {
-  const { mode = 'read' } = options;
+function getAllowedPaths(mode, args = process.argv.slice(2)) {
+  const flag = mode === 'write' ? '--allow-write-path' : '--allow-read-path';
+  const allowedPaths = [];
 
-  if (!inputPath) {
-    throw new Error('Path is required');
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === flag && args[i + 1] && !args[i + 1].startsWith('-')) {
+      allowedPaths.push(args[++i]);
+    } else if (args[i].startsWith(`${flag}=`) && args[i].length > flag.length + 1) {
+      allowedPaths.push(args[i].slice(flag.length + 1));
+    }
   }
 
+  return allowedPaths;
+}
+
+function resolveCanonicalPath(inputPath, mode) {
   const expanded = expandHomePath(inputPath);
   const absolute = path.resolve(expanded);
-
   let candidatePath = absolute;
 
   if (fs.existsSync(absolute)) {
@@ -216,16 +220,31 @@ function resolveSafePath(inputPath, options = {}) {
     }
   }
 
-  if (hasUnsafePathFlag()) {
-    return candidatePath;
+  return candidatePath;
+}
+
+function resolveSafePath(inputPath, options = {}) {
+  const { mode = 'read' } = options;
+
+  if (!inputPath) {
+    throw new Error('Path is required');
   }
+
+  const candidatePath = resolveCanonicalPath(inputPath, mode);
 
   const workspaceRoot = fs.realpathSync(process.cwd());
   if (!isPathInside(workspaceRoot, candidatePath)) {
+    const isExplicitlyAllowed = getAllowedPaths(mode).some((allowedPath) =>
+      resolveCanonicalPath(allowedPath, mode) === candidatePath
+    );
+
+    if (isExplicitlyAllowed) return candidatePath;
+
     const action = mode === 'write' ? 'write to' : 'read from';
+    const allowFlag = mode === 'write' ? '--allow-write-path' : '--allow-read-path';
     throw new Error(
       `Refusing to ${action} path outside current workspace: ${inputPath}. ` +
-      'Use --allow-unsafe-paths to override intentionally.'
+      `Authorize only this exact path with ${allowFlag} "${inputPath}".`
     );
   }
 
@@ -237,8 +256,17 @@ function stripTokenArg(args) {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--json') {
       // skip flag only (no value)
-    } else if (args[i] === '--allow-unsafe-paths') {
-      // skip flag only (no value)
+    } else if (
+      (args[i] === '--allow-read-path' || args[i] === '--allow-write-path') &&
+      i + 1 < args.length &&
+      !args[i + 1].startsWith('-')
+    ) {
+      i++; // skip flag and exact path
+    } else if (
+      args[i].startsWith('--allow-read-path=') ||
+      args[i].startsWith('--allow-write-path=')
+    ) {
+      // skip exact path authorization
     } else if (args[i] === '-h') {
       result.push('--help');
     } else {
@@ -872,7 +900,7 @@ module.exports = {
   parsePageSizeLimit,
   hasJsonFlag,
   hasHelpFlag,
-  hasUnsafePathFlag,
+  getAllowedPaths,
   log,
   resolveSafePath,
   expandHomePath,

@@ -171,7 +171,7 @@ async function checkPage(pageId, localPath, stateFile = DEFAULT_STATE_FILE) {
 }
 
 async function main() {
-  const usage = 'Usage: watch-notion.js [--state-file <path>] <page-id> <local-path> [--json] [--allow-unsafe-paths]';
+  const usage = 'Usage: watch-notion.js [--state-file <path>] <page-id> <local-path> [--json] [--allow-read-path <exact-path>] [--allow-write-path <exact-path>]';
 
   if (hasHelpFlag()) {
     log(usage);

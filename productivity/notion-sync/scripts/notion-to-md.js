@@ -36,7 +36,7 @@ async function main() {
   const isHelp = args.includes('--help');
 
   if (isHelp || args.length < 1) {
-    console.log('Usage: notion-to-md.js <page-id> [output-file] [--json] [--allow-unsafe-paths]');
+    console.log('Usage: notion-to-md.js <page-id> [output-file] [--json] [--allow-write-path <exact-path>]');
     console.log('');
     console.log('Example:');
     console.log('  notion-to-md.js "abc123..." newsletter.md --json');

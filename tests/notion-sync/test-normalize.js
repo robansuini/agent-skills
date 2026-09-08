@@ -741,6 +741,24 @@ assertEqual(
 );
 
 assertEqual(
+  stripTokenArg(['page-id', 'output.md', '--allow-write-path', 'output.md']),
+  ['page-id', 'output.md'],
+  'Strips an exact write-path authorization and its value'
+);
+
+assertEqual(
+  stripTokenArg(['input.md', '--allow-read-path=input.md']),
+  ['input.md'],
+  'Strips an inline exact read-path authorization'
+);
+
+assertEqual(
+  stripTokenArg(['input.md', '--allow-read-path', '--json']),
+  ['input.md', '--allow-read-path'],
+  'Keeps a missing path authorization value for command-level rejection'
+);
+
+assertEqual(
   stripTokenArg(['-h']),
   ['--help'],
   'Normalizes -h to --help'
@@ -1050,6 +1068,7 @@ console.log('\n📋 resolveSafePath path safety');
   const outside = path.join(tempRoot, 'outside');
   fs.mkdirSync(workspace, { recursive: true });
   fs.mkdirSync(outside, { recursive: true });
+  fs.writeFileSync(path.join(outside, 'existing.md'), 'outside');
   fs.symlinkSync(outside, path.join(workspace, 'linkout'));
 
   process.chdir(workspace);
@@ -1064,13 +1083,47 @@ console.log('\n📋 resolveSafePath path safety');
 
   assert(threw, 'Blocks write path that escapes workspace via symlink ancestor');
 
-  process.argv = ['node', 'script.js', '--allow-unsafe-paths'];
-  const unsafeResolved = resolveSafePath('linkout/new/subdir/export.md', { mode: 'write' });
+  process.argv = [
+    'node',
+    'script.js',
+    '--allow-write-path',
+    'linkout/new/subdir/export.md',
+  ];
+  const allowedResolved = resolveSafePath('linkout/new/subdir/export.md', { mode: 'write' });
   assertEqual(
-    unsafeResolved,
+    allowedResolved,
     path.join(fs.realpathSync(outside), 'new/subdir/export.md'),
-    'Allows symlinked write path only when --allow-unsafe-paths is set'
+    'Allows only the exact external write path named by --allow-write-path'
   );
+
+  let siblingThrew = false;
+  try {
+    resolveSafePath('linkout/new/subdir/other.md', { mode: 'write' });
+  } catch (err) {
+    siblingThrew = err.message.includes('--allow-write-path');
+  }
+  assert(siblingThrew, 'Exact write authorization does not allow sibling paths');
+
+  process.argv = ['node', 'script.js', '--allow-read-path=linkout/existing.md'];
+  assertEqual(
+    resolveSafePath('linkout/existing.md', { mode: 'read' }),
+    path.join(fs.realpathSync(outside), 'existing.md'),
+    'Allows only the exact external read path named by --allow-read-path'
+  );
+
+  process.argv = [
+    'node',
+    'script.js',
+    '--allow-write-path',
+    'linkout/new/subdir/export.md',
+  ];
+  let wrongModeThrew = false;
+  try {
+    resolveSafePath('linkout/existing.md', { mode: 'read' });
+  } catch (err) {
+    wrongModeThrew = err.message.includes('--allow-read-path');
+  }
+  assert(wrongModeThrew, 'Write authorization does not grant read access');
 
   process.chdir(originalCwd);
   process.argv = originalArgv;

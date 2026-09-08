@@ -20,7 +20,7 @@ const {
 checkApiKey();
 
 function printUsage() {
-  console.log('Usage: add-to-database.js <database-id> <page-title> <markdown-file-path> [--json] [--allow-unsafe-paths]');
+  console.log('Usage: add-to-database.js <database-id> <page-title> <markdown-file-path> [--json] [--allow-read-path <exact-path>]');
   console.log('');
   console.log('Example:');
   console.log('  add-to-database.js <db-id> "Research Report" research.md --json');
