@@ -8,7 +8,7 @@ breaking: the skill no longer reads `--token-file`, `--token-stdin`, or
 ## Before upgrading
 
 - Upgrade OpenClaw to 2026.9.1 or later.
-- Use Node.js 24 or later.
+- Use Node.js 22.21+ in the 22.x line, 24.5+ in the 24.x line, or 25+.
 - Keep notion-sync v2.5.3 installed until the v3 verification step succeeds.
 - Ensure the Notion integration is shared only with the pages and databases it
   needs.

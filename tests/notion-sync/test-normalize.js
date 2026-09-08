@@ -1130,7 +1130,7 @@ for (const [args, expectedMessage] of [
     {
       cwd: path.resolve(__dirname, '../..'),
       encoding: 'utf8',
-      env: { ...process.env, NOTION_API_KEY: 'test-token' },
+      env: { ...process.env, NOTION_API_KEY: 'oc-sent-v2.test-fixture.end' },
     }
   );
 

@@ -6,15 +6,17 @@
 
 - Removed `--token-file`, `--token-stdin`, and automatic
   `~/.notion-token` credential loading.
-- Requires OpenClaw 2026.9.1+, Node.js 24+, and Gateway-hosted execution for
+- Requires OpenClaw 2026.9.1+, Node.js 22.21+/24.5+/25+, and Gateway-hosted execution for
   the protected-secret workflow.
 
 ### Security
 
 - Uses OpenClaw's protected `NOTION_API_KEY` secret with an exact
   `api.notion.com` destination binding.
-- Replaced `https.request` with proxy-aware global `fetch`, so OpenClaw can
-  substitute the protected credential only at authorized egress.
+- Routes `https.request` through Node's native proxy-aware `https.Agent`, so
+  OpenClaw can substitute the protected credential only at authorized egress.
+- Rejects plaintext `NOTION_API_KEY` values and fails before network activity
+  when the Gateway proxy, CA, or supported Node runtime is unavailable.
 - Fails legacy credential flags with migration guidance and avoids echoing
   inline legacy token values.
 

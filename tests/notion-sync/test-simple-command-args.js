@@ -17,7 +17,9 @@ function run(scriptName, args, env = {}) {
     encoding: 'utf8',
     env: {
       ...process.env,
-      NOTION_API_KEY: 'ntn_dummy_token_for_tests',
+      NOTION_API_KEY: 'oc-sent-v2.test-fixture.end',
+      HTTPS_PROXY: 'http://127.0.0.1:12345',
+      NODE_EXTRA_CA_CERTS: '/etc/ssl/cert.pem',
       ...env,
     },
   });

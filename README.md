@@ -178,8 +178,8 @@ skill-name/
 
 ### Node.js
 
-Version 3 requires Node.js v24+ and OpenClaw 2026.9.1+ (built-in modules only,
-no npm install needed).
+Version 3 requires OpenClaw 2026.9.1+ and Node.js 22.21+ (22.x), 24.5+ (24.x),
+or 25+ (built-in modules only, no npm install needed).
 
 ## Running Tests
 

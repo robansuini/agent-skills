@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 
-const assert = require('assert');
-const path = require('path');
-const { spawnSync } = require('child_process');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const { EventEmitter } = require('node:events');
+const { spawnSync } = require('node:child_process');
 
 const repoRoot = path.resolve(__dirname, '../..');
 const scriptsDir = path.join(repoRoot, 'productivity/notion-sync/scripts');
+const sourcePath = path.join(scriptsDir, 'notion-utils.js');
 const searchScript = path.join(scriptsDir, 'search-notion.js');
+const source = fs.readFileSync(sourcePath, 'utf8');
+const sentinel = 'oc-sent-v2.test-fixture.end';
 
 function runSearch(args) {
   return spawnSync(process.execPath, [searchScript, ...args], {
@@ -14,6 +20,50 @@ function runSearch(args) {
     encoding: 'utf8',
     env: { ...process.env, NOTION_API_KEY: '' },
   });
+}
+
+function fixture({ env = {}, version = '24.13.0', status = 200 } = {}) {
+  const requests = [];
+  let reads = 0;
+  const context = {
+    module: { exports: {} },
+    console,
+    process: {
+      argv: ['node', 'check.js', '--token-file', '/old-token'],
+      env,
+      versions: { node: version },
+    },
+    Buffer,
+    require(id) {
+      if (id === 'fs') {
+        return {
+          existsSync: () => true,
+          readFileSync: () => { reads++; return 'old-file-token'; },
+        };
+      }
+      if (id === 'https') {
+        return {
+          Agent: class { constructor(options) { this.options = options; } },
+          request(options, callback) {
+            requests.push(options);
+            const request = new EventEmitter();
+            request.write = () => {};
+            request.end = () => {
+              const response = new EventEmitter();
+              response.statusCode = status;
+              callback(response);
+              response.emit('data', JSON.stringify({ object: 'user', message: 'rejected' }));
+              response.emit('end');
+            };
+            return request;
+          },
+        };
+      }
+      return require(id);
+    },
+  };
+  vm.runInNewContext(source, context, { filename: sourcePath });
+  return { api: context.module.exports, requests, reads: () => reads };
 }
 
 for (const args of [
@@ -39,34 +89,50 @@ for (const args of [
   assert(parsed.error.includes('--token-file is not supported'));
 }
 
-async function testProtectedSentinelTransport() {
-  const sentinel = 'oc-sent-v2.test-value.end';
-  process.env.NOTION_API_KEY = sentinel;
-
-  let request = null;
-  global.fetch = async (url, options) => {
-    request = { url, options };
-    return {
-      ok: true,
-      status: 200,
-      text: async () => JSON.stringify({ results: [] }),
-    };
+(async () => {
+  const env = {
+    NOTION_API_KEY: sentinel,
+    HTTPS_PROXY: 'http://127.0.0.1:12345',
+    NODE_EXTRA_CA_CERTS: '/gateway/ca.pem',
+    NO_PROXY: '*',
+    https_proxy: 'http://wrong-proxy:12345',
   };
 
-  const { notionRequest, _resetTokenCache } = require(path.join(scriptsDir, 'notion-utils.js'));
-  _resetTokenCache();
+  for (const version of ['22.21.0', '24.5.0', '24.13.0', '25.0.0']) {
+    const current = fixture({ env, version });
+    assert.equal(current.api.getApiKey(), sentinel);
+    assert.equal(current.reads(), 0, 'protected mode must not read a legacy token file');
+    assert.equal((await current.api.notionRequest('/v1/users/me', 'GET')).object, 'user');
+    assert.equal(current.requests[0].hostname, 'api.notion.com');
+    assert.equal(current.requests[0].headers.Authorization, `Bearer ${sentinel}`);
+    assert.equal(current.requests[0].agent.options.proxyEnv.HTTPS_PROXY, env.HTTPS_PROXY);
+    assert.equal(current.requests[0].agent.options.proxyEnv.NO_PROXY, undefined);
+    assert.equal(current.requests[0].agent.options.proxyEnv.https_proxy, undefined);
+  }
 
-  const response = await notionRequest('/v1/search', 'POST', { query: 'roadmap' });
-  assert.deepStrictEqual(response, { results: [] });
-  assert.strictEqual(request.url, 'https://api.notion.com/v1/search');
-  assert.strictEqual(request.options.method, 'POST');
-  assert.strictEqual(request.options.headers.Authorization, `Bearer ${sentinel}`);
-  assert.strictEqual(request.options.body, JSON.stringify({ query: 'roadmap' }));
-}
+  for (const options of [
+    { env, version: '18.20.0' },
+    { env, version: '22.20.0' },
+    { env, version: '24.4.0' },
+    { env: { ...env, HTTPS_PROXY: '' } },
+    { env: { ...env, NODE_EXTRA_CA_CERTS: '' } },
+  ]) {
+    const current = fixture(options);
+    await assert.rejects(current.api.notionRequest('/v1/users/me', 'GET'), /Gateway-hosted exec/);
+    assert.equal(current.requests.length, 0, 'must fail before network activity');
+  }
 
-testProtectedSentinelTransport()
-  .then(() => console.log('All protected-secret migration tests passed.'))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
+  const plaintext = fixture({
+    env: { ...env, NOTION_API_KEY: 'plaintext-test-value' },
   });
+  await assert.rejects(plaintext.api.notionRequest('/v1/users/me', 'GET'), /Plaintext environment values/);
+  assert.equal(plaintext.requests.length, 0, 'plaintext credentials must fail before network activity');
+
+  const rejected = fixture({ env, status: 401 });
+  await assert.rejects(rejected.api.notionRequest('/v1/users/me', 'GET'), /Authentication failed/);
+
+  console.log('All protected-secret migration tests passed.');
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

@@ -4,6 +4,7 @@
  */
 
 const fs = require('fs');
+const https = require('https');
 const os = require('os');
 const path = require('path');
 
@@ -31,6 +32,9 @@ const TOKEN_MIGRATION_MESSAGE =
   'notion-sync v3 no longer accepts CLI or file-based tokens. Store NOTION_API_KEY ' +
   'as an OpenClaw protected secret allowed only for api.notion.com, then run the ' +
   'skill through Gateway-hosted exec. See references/MIGRATION-V3.md.';
+const PROTECTED_SECRET_MESSAGE =
+  'notion-sync v3 requires an OpenClaw protected NOTION_API_KEY and Gateway-hosted ' +
+  'exec with the secret egress proxy. Plaintext environment values are not supported.';
 
 function findLegacyTokenFlag(args = process.argv.slice(2)) {
   for (const arg of args) {
@@ -39,6 +43,28 @@ function findLegacyTokenFlag(args = process.argv.slice(2)) {
     if (arg.startsWith('--token-file=')) return '--token-file';
   }
   return null;
+}
+
+function supportsNativeProxy(nodeVersion = process.versions.node) {
+  const [major, minor] = String(nodeVersion).split('.').map(Number);
+  return major >= 25 || (major === 24 && minor >= 5) || (major === 22 && minor >= 21);
+}
+
+function createProtectedProxyAgent(apiKey, env = process.env, nodeVersion = process.versions.node) {
+  if (!apiKey.startsWith('oc-sent-v2.') || !apiKey.endsWith('.end')) {
+    throw new Error(PROTECTED_SECRET_MESSAGE);
+  }
+
+  if (!supportsNativeProxy(nodeVersion) || !env.HTTPS_PROXY || !env.NODE_EXTRA_CA_CERTS) {
+    throw new Error(
+      'Protected Notion credentials require OpenClaw Gateway-hosted exec, its egress ' +
+      'proxy and CA, and Node.js 22.21+ (22.x), 24.5+ (24.x), or 25+.'
+    );
+  }
+
+  return new https.Agent({
+    proxyEnv: { HTTPS_PROXY: env.HTTPS_PROXY },
+  });
 }
 
 /**
@@ -252,38 +278,56 @@ function parsePageSizeLimit(value, flagName = '--limit') {
 /**
  * Make a Notion API request with proper error handling
  */
-async function notionRequest(path, method, data = null) {
+function notionRequest(path, method, data = null) {
   const apiKey = getApiKey();
   if (!apiKey) {
-    throw new Error(`No Notion API token found. ${TOKEN_MIGRATION_MESSAGE}`);
+    return Promise.reject(new Error(`No Notion API token found. ${TOKEN_MIGRATION_MESSAGE}`));
   }
 
-  let response;
+  let proxyAgent;
   try {
-    response = await fetch(`https://api.notion.com${path}`, {
+    proxyAgent = createProtectedProxyAgent(apiKey);
+  } catch (err) {
+    return Promise.reject(err);
+  }
+
+  return new Promise((resolve, reject) => {
+    const requestData = data ? JSON.stringify(data) : null;
+    const options = {
+      hostname: 'api.notion.com',
+      port: 443,
+      path,
       method,
+      agent: proxyAgent,
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Notion-Version': NOTION_VERSION,
         'Content-Type': 'application/json',
       },
-      body: data ? JSON.stringify(data) : undefined,
-      signal: AbortSignal.timeout(30_000),
+    };
+
+    if (requestData) options.headers['Content-Length'] = Buffer.byteLength(requestData);
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', (chunk) => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          try {
+            resolve(JSON.parse(body));
+          } catch (_) {
+            resolve(body);
+          }
+        } else {
+          reject(createDetailedError(res.statusCode, body));
+        }
+      });
     });
-  } catch (err) {
-    throw wrapNetworkError(err);
-  }
 
-  const body = await response.text();
-  if (!response.ok) {
-    throw createDetailedError(response.status, body);
-  }
-
-  try {
-    return JSON.parse(body);
-  } catch (_) {
-    return body;
-  }
+    req.on('error', (err) => reject(wrapNetworkError(err)));
+    if (requestData) req.write(requestData);
+    req.end();
+  });
 }
 
 /**
@@ -805,6 +849,9 @@ module.exports = {
   shouldRequireApiKey,
   findLegacyTokenFlag,
   TOKEN_MIGRATION_MESSAGE,
+  PROTECTED_SECRET_MESSAGE,
+  supportsNativeProxy,
+  createProtectedProxyAgent,
   stripTokenArg,
   parsePositiveInteger,
   parsePageSizeLimit,

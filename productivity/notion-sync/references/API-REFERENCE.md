@@ -230,8 +230,10 @@ Makes authenticated API requests to Notion.
 - `method`: HTTP method (GET, POST, PATCH, DELETE)
 - `body`: Optional request body (object)
 
-**Transport:** Node.js global `fetch` with a 30-second timeout. This is
-required for OpenClaw's proxy-aware protected-secret egress.
+**Transport:** Node.js `https.request` through a native proxy-aware
+`https.Agent`. The agent receives only the Gateway-provided `HTTPS_PROXY`
+value, so inherited `NO_PROXY` or lowercase proxy overrides cannot bypass
+protected-secret egress.
 
 **Returns:** Promise resolving to response JSON
 
@@ -288,9 +290,10 @@ Notion API limits:
 
 ### Module Not Found
 
-**Error:** `fetch is not defined` or proxy-aware fetch is unavailable
+**Error:** protected-secret proxy support is unavailable
 
-**Solution:** Ensure using Node.js v24+ (built-in modules)
+**Solution:** Use Node.js 22.21+ (22.x), 24.5+ (24.x), or 25+, and run through
+OpenClaw Gateway-hosted exec with the egress proxy enabled.
 
 ## Page ID Extraction
 

@@ -31,7 +31,7 @@ Gateway egress proxy are configured and verified.
 ## Requirements
 
 - **OpenClaw** 2026.9.1 or later with the `secrets` tool
-- **Node.js** v24 or later for proxy-aware global `fetch`
+- **Node.js** 22.21+ in the 22.x line, 24.5+ in the 24.x line, or 25+
 - Gateway-hosted execution; protected secrets are not injected into sandbox,
   native harness shell, ACP, or remote-node execution
 - A **Notion integration token** (starts with `ntn_` or `secret_`)
