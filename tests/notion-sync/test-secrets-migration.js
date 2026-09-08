@@ -14,6 +14,8 @@ const searchScript = path.join(scriptsDir, 'search-notion.js');
 const source = fs.readFileSync(sourcePath, 'utf8');
 const sentinel = 'oc-sent-v2.test-fixture.end';
 
+assert(!source.includes('oc-sent-v2.'), 'publishable skill source must not resemble a live sentinel');
+
 function runSearch(args) {
   return spawnSync(process.execPath, [searchScript, ...args], {
     cwd: repoRoot,
