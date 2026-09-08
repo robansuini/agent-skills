@@ -36,7 +36,10 @@ Scripts that read/write local files are restricted to the current working direct
 
 - Applies to: `md-to-notion.js`, `notion-to-md.js`, `watch-notion.js`, `add-to-database.js`
 - Write-path checks resolve symlink ancestors before enforcement to prevent workspace escape via nested missing directories
-- Override intentionally with `--allow-unsafe-paths`
+- External inputs require `--allow-read-path <exact-path>`; external outputs
+  require `--allow-write-path <exact-path>`
+- Each authorization is mode-specific and matches one canonical path only; it
+  does not grant access to parent, child, or sibling paths
 
 ## Scripts Reference
 
@@ -135,7 +138,7 @@ Convert markdown to Notion page.
 
 **Signature:**
 ```bash
-node scripts/md-to-notion.js "<markdown-file>" "<parent-page-id>" "<title>" [--json] [--allow-unsafe-paths]
+node scripts/md-to-notion.js "<markdown-file>" "<parent-page-id>" "<title>" [--json] [--allow-read-path <exact-path>]
 ```
 
 **Supported Markdown:**
@@ -161,7 +164,7 @@ Convert Notion page to markdown.
 
 **Signature:**
 ```bash
-node scripts/notion-to-md.js <page-id> [output-file] [--json] [--allow-unsafe-paths]
+node scripts/notion-to-md.js <page-id> [output-file] [--json] [--allow-write-path <exact-path>]
 ```
 
 **Output:** Writes markdown to file or stdout
@@ -174,7 +177,7 @@ Monitor page for changes.
 
 **Signature:**
 ```bash
-node scripts/watch-notion.js [--state-file <path>] <page-id> <local-path> [--json] [--allow-unsafe-paths]
+node scripts/watch-notion.js [--state-file <path>] <page-id> <local-path> [--json] [--allow-read-path <exact-path>] [--allow-write-path <exact-path>]
 ```
 
 **State File:** Default `memory/notion-watch-state.json` (relative to cwd), overridable with `--state-file` (supports `~` expansion)

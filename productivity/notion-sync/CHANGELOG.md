@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.2 — 2026-09-08
+
+### Security
+
+- Replaces the unbounded `--allow-unsafe-paths` workspace bypass with exact,
+  mode-specific `--allow-read-path` and `--allow-write-path` authorization.
+- Canonically matches each authorized path so access does not extend to
+  sibling paths or cross from write permission to read permission.
+
 ## 3.0.1 — 2026-09-08
 
 ### Security

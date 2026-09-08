@@ -26,7 +26,7 @@ async function main() {
   const isHelp = hasHelpFlag();
 
   if (isHelp || args.length < 3) {
-    console.log('Usage: md-to-notion.js <markdown-file> <parent-page-id> <page-title> [--json] [--allow-unsafe-paths]');
+    console.log('Usage: md-to-notion.js <markdown-file> <parent-page-id> <page-title> [--json] [--allow-read-path <exact-path>]');
     console.log('');
     console.log('Example:');
     console.log('  md-to-notion.js draft.md "abc123..." "Newsletter Draft" --json');

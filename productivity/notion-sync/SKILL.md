@@ -25,8 +25,8 @@ Bi-directional sync between markdown files and Notion pages, plus database manag
 - Reads `NOTION_API_KEY` from the environment and sends it only to
   `https://api.notion.com`.
 - Reads and writes user-selected markdown and watch-state files. Workspace path
-  restrictions are enabled by default; `--allow-unsafe-paths` is an explicit
-  override.
+  restrictions are enabled by default. Each external path requires an exact,
+  mode-specific `--allow-read-path` or `--allow-write-path` authorization.
 - Can search, read, create, update, batch-update, inspect, and archive Notion
   content shared with the configured integration.
 - Mutating operations run only through an explicitly selected command. Batch
@@ -118,15 +118,17 @@ Scripts that read/write local files are restricted to the current working direct
 - Prevents accidental reads/writes outside the intended workspace
 - Applies to: `md-to-notion.js`, `add-to-database.js`, `notion-to-md.js`, `watch-notion.js`
 - Canonicalizes symlinked path ancestors before enforcement to block workspace-escape writes
-- Override intentionally with `--allow-unsafe-paths`
+- Outside-workspace access requires the exact target path and access mode;
+  authorization does not extend to parent, child, or sibling paths
 
 Examples:
 ```bash
 # Default (safe): path must be inside current workspace
 node scripts/md-to-notion.js docs/draft.md <parent-id> "Draft"
 
-# Intentional override (outside workspace)
-node scripts/notion-to-md.js <page-id> ~/Downloads/export.md --allow-unsafe-paths
+# Explicit authorization for one outside-workspace output
+node scripts/notion-to-md.js <page-id> ~/Downloads/export.md \
+  --allow-write-path ~/Downloads/export.md
 ```
 
 ## Core Operations
@@ -278,7 +280,7 @@ Push markdown content to Notion with full formatting support.
 node scripts/md-to-notion.js \
   "<markdown-file-path>" \
   "<notion-parent-page-id>" \
-  "<page-title>" [--json] [--allow-unsafe-paths]
+  "<page-title>" [--json] [--allow-read-path <exact-path>]
 ```
 
 **Example:**
@@ -321,7 +323,7 @@ Parsed 294 blocks from markdown
 Pull Notion page content and convert to markdown.
 
 ```bash
-node scripts/notion-to-md.js <page-id> [output-file] [--json] [--allow-unsafe-paths]
+node scripts/notion-to-md.js <page-id> [output-file] [--json] [--allow-write-path <exact-path>]
 ```
 
 **Example:**
@@ -342,7 +344,7 @@ node scripts/notion-to-md.js \
 Monitor Notion pages for edits and compare with local markdown files.
 
 ```bash
-node scripts/watch-notion.js "<page-id>" "<local-markdown-path>" [--state-file <path>] [--json] [--allow-unsafe-paths]
+node scripts/watch-notion.js "<page-id>" "<local-markdown-path>" [--state-file <path>] [--json] [--allow-read-path <exact-path>] [--allow-write-path <exact-path>]
 ```
 
 **Example:**
@@ -398,7 +400,7 @@ The script outputs JSON — pipe it to any notification system when `hasChanges`
 Add a markdown file as a new page in any Notion database.
 
 ```bash
-node scripts/add-to-database.js <database-id> "<page-title>" <markdown-file-path> [--json] [--allow-unsafe-paths]
+node scripts/add-to-database.js <database-id> "<page-title>" <markdown-file-path> [--json] [--allow-read-path <exact-path>]
 ```
 
 **Examples:**
