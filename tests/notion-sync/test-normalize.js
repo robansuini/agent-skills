@@ -31,6 +31,7 @@ const {
   parsePositiveInteger,
   parsePageSizeLimit,
   shouldRequireApiKey,
+  findLegacyTokenFlag,
   hasJsonFlag,
   log,
   expandHomePath,
@@ -718,14 +719,8 @@ console.log('\n📋 hasJsonFlag');
   assertEqual(captured.includes('hidden log'), false, 'log() is suppressed with --json');
 }
 
-// --- stripTokenArg ---
-console.log('\n📋 stripTokenArg');
-
-assertEqual(
-  stripTokenArg(['--token-file', '/path/to/token', 'query']),
-  ['query'],
-  'Strips --token-file and its value'
-);
+// --- global and legacy credential arguments ---
+console.log('\n📋 global and legacy credential arguments');
 
 assertEqual(
   stripTokenArg(['query', '--limit', '5']),
@@ -740,24 +735,6 @@ assertEqual(
 );
 
 assertEqual(
-  stripTokenArg(['--filter', 'page', '--token-file', '~/.notion-token', '--limit', '5']),
-  ['--filter', 'page', '--limit', '5'],
-  'Strips --token-file from middle of args'
-);
-
-assertEqual(
-  stripTokenArg(['--token-stdin', 'query', '--limit', '5']),
-  ['query', '--limit', '5'],
-  'Strips --token-stdin flag (no value)'
-);
-
-assertEqual(
-  stripTokenArg(['--token-stdin', '--token-file', '/tmp/t', 'search']),
-  ['search'],
-  'Strips multiple token flags at once'
-);
-
-assertEqual(
   stripTokenArg(['query', '--json', '--limit', '5']),
   ['query', '--limit', '5'],
   'Strips --json flag'
@@ -768,6 +745,18 @@ assertEqual(
   ['--help'],
   'Normalizes -h to --help'
 );
+
+for (const flag of ['--token', '--token-file', '--token-stdin']) {
+  assertEqual(findLegacyTokenFlag(['query', flag]), flag, `Detects removed credential flag ${flag}`);
+}
+
+assertEqual(
+  findLegacyTokenFlag(['query', '--token=do-not-echo']),
+  '--token',
+  'Normalizes inline legacy tokens without retaining the value'
+);
+
+assertEqual(findLegacyTokenFlag(['query', '--json']), null, 'Accepts credential-free arguments');
 
 console.log('\n📋 -h help alias');
 
@@ -925,7 +914,7 @@ assertEqual(
 assertEqual(
   shouldRequireApiKey(['--token-file', '/tmp/token']),
   false,
-  'Token flags only: auth check not required'
+  'Legacy option-first invocation is handled by the migration gate'
 );
 
 assertEqual(
@@ -959,8 +948,8 @@ assertEqual(
 );
 
 
-// --- token resolution and path expansion ---
-console.log('\n📋 token resolution and path expansion');
+// --- managed token resolution and path expansion ---
+console.log('\n📋 managed token resolution and path expansion');
 
 {
   const originalHomedir = os.homedir;
@@ -987,7 +976,7 @@ console.log('\n📋 token resolution and path expansion');
   os.homedir = () => tempHome;
   _resetTokenCache();
 
-  assertEqual(resolveToken(), 'token_from_default_file', 'Auto-detects ~/.notion-token before env var');
+  assertEqual(resolveToken(), null, 'Does not auto-read legacy ~/.notion-token files');
 
   _resetTokenCache();
   process.argv = originalArgv;
@@ -1015,11 +1004,7 @@ console.log('\n📋 token resolution and path expansion');
   os.homedir = () => tempHome;
   _resetTokenCache();
 
-  assertEqual(
-    resolveToken(),
-    'token_from_explicit_file',
-    'Explicit --token-file wins over default file and env var'
-  );
+  assertEqual(resolveToken(), 'token_from_env', 'Uses only the managed NOTION_API_KEY environment');
 
   _resetTokenCache();
   process.argv = originalArgv;

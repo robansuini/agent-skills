@@ -29,8 +29,8 @@ Bi-directional sync and management for Notion pages and databases. Enables colla
 **Example workflows** (start from repository root):
 
 ```bash
-# Prereq: configure a Notion token (one of: NOTION_API_KEY, ~/.notion-token, --token-file, --token-stdin)
-# See "Notion Integration Setup" below for details.
+# Prereq: configure NOTION_API_KEY as an OpenClaw protected secret.
+# Bind it only to api.notion.com and enable the Gateway secret egress proxy.
 
 # Move into the notion-sync skill once
 cd productivity/notion-sync
@@ -168,15 +168,18 @@ skill-name/
 1. Go to https://www.notion.so/my-integrations
 2. Create a new integration
 3. Copy the "Internal Integration Token"
-4. Store it securely in your environment (or use `--token-file` / `--token-stdin` in scripts):
-   ```bash
-   export NOTION_API_KEY="your-token-here"
-   ```
-5. Share your Notion pages/databases with the integration
+4. Store it through OpenClaw's masked prompt or **Settings → Secrets** as a
+   protected secret named `NOTION_API_KEY`, allowed only for
+   `api.notion.com`. Never paste the token into chat or a command.
+5. Enable `secrets.egressProxy.enabled`, restart the Gateway, and use
+   Gateway-hosted exec. See
+   [the v3 migration guide](productivity/notion-sync/references/MIGRATION-V3.md).
+6. Share your Notion pages/databases with the integration
 
 ### Node.js
 
-Scripts require Node.js v18+ (uses built-in modules only, no npm install needed).
+Version 3 requires Node.js v24+ and OpenClaw 2026.9.1+ (built-in modules only,
+no npm install needed).
 
 ## Running Tests
 

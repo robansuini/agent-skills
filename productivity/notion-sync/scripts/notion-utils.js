@@ -3,7 +3,6 @@
  * Common functions for HTTP requests, error handling, and data extraction
  */
 
-const https = require('https');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -14,64 +13,32 @@ const NOTION_VERSION = '2025-09-03';
 let _cachedToken = undefined;
 
 /**
- * Resolve the Notion API token from multiple sources (in priority order):
+ * Resolve the Notion API token from the process environment.
  *
- * 1. --token-file <path>    Read from a file (recommended for automation)
- * 2. --token-stdin           Read from stdin (recommended for pipes)
- * 3. ~/.notion-token         Auto-detected default token file
- * 4. NOTION_API_KEY env var  Environment variable fallback
- *
- * Credentials are never accepted as bare command-line arguments to avoid
- * exposure in process listings and shell history.
+ * In v3 OpenClaw injects NOTION_API_KEY as an opaque protected-store sentinel
+ * for Gateway-hosted execution. The real credential is substituted only when
+ * fetch sends the request to api.notion.com.
  */
 function resolveToken() {
   if (_cachedToken !== undefined) return _cachedToken;
 
-  const args = process.argv;
-
-  for (let i = 2; i < args.length; i++) {
-    // --token-file <path>
-    if (args[i] === '--token-file' && args[i + 1]) {
-      _cachedToken = readTokenFile(args[i + 1], 'token file');
-      return _cachedToken;
-    }
-    // --token-stdin
-    if (args[i] === '--token-stdin') {
-      try {
-        _cachedToken = fs.readFileSync(0, 'utf8').trim(); // fd 0 = stdin
-        return _cachedToken;
-      } catch (err) {
-        console.error(`Error reading token from stdin: ${err.message}`);
-        process.exit(1);
-      }
-    }
-  }
-
-  // Auto-check default token file
-  const defaultTokenPath = path.join(os.homedir(), '.notion-token');
-  if (fs.existsSync(defaultTokenPath)) {
-    _cachedToken = readTokenFile(defaultTokenPath, 'default token file');
-    return _cachedToken;
-  }
-
-  // Env var fallback
-  if (process.env.NOTION_API_KEY) {
-    _cachedToken = process.env.NOTION_API_KEY;
-    return _cachedToken;
-  }
-
-  _cachedToken = null;
-  return null;
+  _cachedToken = process.env.NOTION_API_KEY || null;
+  return _cachedToken;
 }
 
-function readTokenFile(inputPath, sourceLabel) {
-  try {
-    const tokenPath = expandHomePath(inputPath);
-    return fs.readFileSync(tokenPath, 'utf8').trim();
-  } catch (err) {
-    console.error(`Error reading ${sourceLabel} "${inputPath}": ${err.message}`);
-    process.exit(1);
+const LEGACY_TOKEN_FLAGS = new Set(['--token', '--token-file', '--token-stdin']);
+const TOKEN_MIGRATION_MESSAGE =
+  'notion-sync v3 no longer accepts CLI or file-based tokens. Store NOTION_API_KEY ' +
+  'as an OpenClaw protected secret allowed only for api.notion.com, then run the ' +
+  'skill through Gateway-hosted exec. See references/MIGRATION-V3.md.';
+
+function findLegacyTokenFlag(args = process.argv.slice(2)) {
+  for (const arg of args) {
+    if (LEGACY_TOKEN_FLAGS.has(arg)) return arg;
+    if (arg.startsWith('--token=')) return '--token';
+    if (arg.startsWith('--token-file=')) return '--token-file';
   }
+  return null;
 }
 
 /**
@@ -89,14 +56,15 @@ function expandHomePath(inputPath) {
  */
 function wrapNetworkError(err) {
   const networkCodes = new Set(['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT', 'ECONNRESET', 'EAI_AGAIN']);
-  if (networkCodes.has(err.code)) {
+  const code = err.code || err.cause?.code;
+  if (networkCodes.has(code) || err.name === 'AbortError' || err.name === 'TimeoutError') {
     return new Error('Could not reach Notion API. Check your internet connection.');
   }
   return new Error(`Could not reach Notion API. ${err.message}`);
 }
 
 /**
- * Get the Notion API key (resolves from all supported sources)
+ * Get the run-scoped Notion API key or protected-store sentinel
  */
 function getApiKey() {
   return resolveToken();
@@ -122,25 +90,26 @@ function shouldRequireApiKey(rawArgs = process.argv.slice(2)) {
 }
 
 function checkApiKey() {
+  if (hasHelpFlag()) return;
+
+  const legacyFlag = findLegacyTokenFlag();
+  if (legacyFlag) {
+    const message = `${legacyFlag} is not supported. ${TOKEN_MIGRATION_MESSAGE}`;
+    if (hasJsonFlag()) console.log(JSON.stringify({ error: message }, null, 2));
+    else console.error(`Error: ${message}`);
+    process.exit(1);
+  }
+
   if (!shouldRequireApiKey()) return;
 
   if (!getApiKey()) {
-    const message = 'No Notion API token found. Provide one via: --token-file <path>, --token-stdin (pipe), or NOTION_API_KEY env var.';
+    const message = `No Notion API token found. ${TOKEN_MIGRATION_MESSAGE}`;
     if (hasJsonFlag()) {
       console.log(JSON.stringify({ error: message }, null, 2));
     } else {
       console.error('Error: No Notion API token provided');
       console.error('');
       console.error(message);
-      console.error('');
-      console.error('Usage (pick one):');
-      console.error('  node scripts/<script>.js --token-file ~/.notion-token [args]');
-      console.error('  echo "$NOTION_API_KEY" | node scripts/<script>.js --token-stdin [args]');
-      console.error('  NOTION_API_KEY=ntn_... node scripts/<script>.js [args]');
-      console.error('');
-      console.error('Default: if ~/.notion-token exists, it is used automatically.');
-      console.error('');
-      console.error('Credentials are never passed as bare CLI arguments (security best practice).');
       console.error('Create an integration at https://www.notion.so/my-integrations');
     }
     process.exit(1);
@@ -148,7 +117,7 @@ function checkApiKey() {
 }
 
 /**
- * Strip token-related flags from an args array so scripts don't parse them as their own args
+ * Strip supported global flags so scripts can parse command-specific arguments
  */
 function hasJsonFlag() {
   return process.argv.includes('--json');
@@ -227,11 +196,7 @@ function resolveSafePath(inputPath, options = {}) {
 function stripTokenArg(args) {
   const result = [];
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--token-file' && i + 1 < args.length) {
-      i++; // skip value
-    } else if (args[i] === '--token-stdin') {
-      // skip flag only (no value)
-    } else if (args[i] === '--json') {
+    if (args[i] === '--json') {
       // skip flag only (no value)
     } else if (args[i] === '--allow-unsafe-paths') {
       // skip flag only (no value)
@@ -287,55 +252,38 @@ function parsePageSizeLimit(value, flagName = '--limit') {
 /**
  * Make a Notion API request with proper error handling
  */
-function notionRequest(path, method, data = null) {
+async function notionRequest(path, method, data = null) {
   const apiKey = getApiKey();
   if (!apiKey) {
-    return Promise.reject(new Error('No Notion API token found. Provide one via: --token-file <path>, --token-stdin (pipe), or NOTION_API_KEY env var.'));
+    throw new Error(`No Notion API token found. ${TOKEN_MIGRATION_MESSAGE}`);
   }
 
-  return new Promise((resolve, reject) => {
-    const requestData = data ? JSON.stringify(data) : null;
-
-    const options = {
-      hostname: 'api.notion.com',
-      port: 443,
-      path: path,
-      method: method,
+  let response;
+  try {
+    response = await fetch(`https://api.notion.com${path}`, {
+      method,
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'Notion-Version': NOTION_VERSION,
-        'Content-Type': 'application/json'
-      }
-    };
-
-    if (requestData) {
-      options.headers['Content-Length'] = Buffer.byteLength(requestData);
-    }
-
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', (chunk) => body += chunk);
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          try {
-            resolve(JSON.parse(body));
-          } catch (e) {
-            resolve(body);
-          }
-        } else {
-          reject(createDetailedError(res.statusCode, body));
-        }
-      });
+        'Content-Type': 'application/json',
+      },
+      body: data ? JSON.stringify(data) : undefined,
+      signal: AbortSignal.timeout(30_000),
     });
+  } catch (err) {
+    throw wrapNetworkError(err);
+  }
 
-    req.on('error', (err) => {
-      reject(wrapNetworkError(err));
-    });
-    if (requestData) {
-      req.write(requestData);
-    }
-    req.end();
-  });
+  const body = await response.text();
+  if (!response.ok) {
+    throw createDetailedError(response.status, body);
+  }
+
+  try {
+    return JSON.parse(body);
+  } catch (_) {
+    return body;
+  }
 }
 
 /**
@@ -855,6 +803,8 @@ module.exports = {
   resolveToken,
   checkApiKey,
   shouldRequireApiKey,
+  findLegacyTokenFlag,
+  TOKEN_MIGRATION_MESSAGE,
   stripTokenArg,
   parsePositiveInteger,
   parsePageSizeLimit,

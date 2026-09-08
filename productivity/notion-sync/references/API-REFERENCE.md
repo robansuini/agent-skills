@@ -2,23 +2,24 @@
 
 Detailed technical reference for all Notion sync scripts and utilities.
 
-## Environment Setup
+## OpenClaw protected credential setup
 
 ### Notion Token
 
-All scripts require a Notion integration token. Supported sources (priority order):
+All scripts require `NOTION_API_KEY`. In v3 this must be supplied through
+OpenClaw's protected secret workflow:
 
-1. `--token-file <path>` (supports `~` expansion)
-2. `--token-stdin` (pipe token through stdin)
-3. `~/.notion-token` (auto-detected if present)
-4. `NOTION_API_KEY` env var
+1. List secret metadata with the `secrets` tool.
+2. If missing, request `NOTION_API_KEY` as `kind: secret` with
+   `allowedHosts: ["api.notion.com"]`.
+3. Run the script with Gateway-hosted exec after the secret exists.
 
-```bash
-node scripts/search-notion.js "query" --token-file ~/.notion-token
-# or
+OpenClaw injects an opaque environment sentinel. The scripts use global
+`fetch`, allowing the Gateway egress proxy to replace that sentinel only for
+`https://api.notion.com`. Never inspect or print the environment variable.
 
-echo "$NOTION_API_KEY" | node scripts/search-notion.js "query" --token-stdin
-```
+Removed in v3: `--token`, `--token-file`, `--token-stdin`, and automatic
+`~/.notion-token` loading. See [MIGRATION-V3.md](MIGRATION-V3.md).
 
 ## JSON Output Mode
 
@@ -229,10 +230,13 @@ Makes authenticated API requests to Notion.
 - `method`: HTTP method (GET, POST, PATCH, DELETE)
 - `body`: Optional request body (object)
 
+**Transport:** Node.js global `fetch` with a 30-second timeout. This is
+required for OpenClaw's proxy-aware protected-secret egress.
+
 **Returns:** Promise resolving to response JSON
 
 **Error Handling:** Throws actionable messages for common failures:
-- Missing token: guidance for `--token-file`, `--token-stdin`, and `NOTION_API_KEY`
+- Missing token: guidance for the OpenClaw protected `NOTION_API_KEY` migration
 - 401: authentication/access guidance
 - 404: page/database access/id guidance
 - Network errors: connectivity guidance
@@ -271,7 +275,8 @@ Notion API limits:
 **Solutions:**
 1. Verify page/database is shared with your integration
 2. Check page ID format (32 chars, no extra characters)
-3. Confirm your integration token is valid and available via --token-file, --token-stdin, ~/.notion-token, or NOTION_API_KEY
+3. Confirm the protected `NOTION_API_KEY` entry is available, bound to
+   `api.notion.com`, and running through Gateway-hosted exec
 
 ### Property Update Failures
 
@@ -283,9 +288,9 @@ Notion API limits:
 
 ### Module Not Found
 
-**Error:** `Cannot find module 'https'`
+**Error:** `fetch is not defined` or proxy-aware fetch is unavailable
 
-**Solution:** Ensure using Node.js v18+ (built-in modules)
+**Solution:** Ensure using Node.js v24+ (built-in modules)
 
 ## Page ID Extraction
 
