@@ -1,15 +1,17 @@
 ---
 name: notion-sync
-description: Bi-directional Notion page and database sync. Use for markdown sync, change monitoring, search, queries, and property updates with credentials supplied by the host runtime's secret manager.
+description: Read, search, export, create, update, monitor, query, inspect, batch-edit, and explicitly archive Notion pages and databases. Use when the user requests Notion content or database operations and a host secret manager can supply NOTION_API_KEY.
 homepage: https://github.com/robansuini/agent-skills
 license: MIT-0
+allowed-tools: Bash, Read, Write, WebFetch, Env
 metadata:
   {
     "openclaw":
       {
         "emoji": "📝",
-        "requires": { "bins": ["node"] },
+        "requires": { "bins": ["node"], "env": ["NOTION_API_KEY"] },
         "primaryEnv": "NOTION_API_KEY",
+        "network": { "outboundHosts": ["api.notion.com"] },
       },
   }
 ---
@@ -17,6 +19,19 @@ metadata:
 # Notion Sync
 
 Bi-directional sync between markdown files and Notion pages, plus database management utilities for research tracking and project management.
+
+## Security and capability boundary
+
+- Reads `NOTION_API_KEY` from the environment and sends it only to
+  `https://api.notion.com`.
+- Reads and writes user-selected markdown and watch-state files. Workspace path
+  restrictions are enabled by default; `--allow-unsafe-paths` is an explicit
+  override.
+- Can search, read, create, update, batch-update, inspect, and archive Notion
+  content shared with the configured integration.
+- Mutating operations run only through an explicitly selected command. Batch
+  query updates require a filter, and page archiving additionally requires
+  `--confirm-archive`.
 
 ## Upgrading
 
@@ -443,10 +458,12 @@ node scripts/get-database-schema.js <database-id> [--json]
 #### Archive Pages
 
 ```bash
-node scripts/delete-notion-page.js <page-id> [--json]
+node scripts/delete-notion-page.js <page-id> --confirm-archive [--json]
 ```
 
 **Note:** This archives the page (sets `archived: true`), not permanent deletion.
+The explicit confirmation flag prevents an agent or user from archiving a page
+through an incomplete command.
 
 ## Common Workflows
 

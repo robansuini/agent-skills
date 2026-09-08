@@ -52,10 +52,12 @@ expectSuccess('delete-notion-page.js', ['-h'], 'Usage: delete-notion-page.js');
 expectFailure('delete-notion-page.js', ['page-id', '--unknown'], 'Unknown option: --unknown');
 expectFailure('delete-notion-page.js', ['page-id', 'extra'], 'Unexpected argument: extra');
 expectFailure('delete-notion-page.js', ['page-id', '--unknown', '--json'], '"error"');
-expectSuccess('delete-notion-page.js', ['page-id', '--json'], '"archived": true', {
+expectFailure('delete-notion-page.js', ['page-id'], '--confirm-archive');
+expectFailure('delete-notion-page.js', ['page-id', '--json'], '--confirm-archive');
+expectSuccess('delete-notion-page.js', ['page-id', '--confirm-archive', '--json'], '"archived": true', {
   NODE_OPTIONS: `--require ${mockNotionApi}`,
 });
-expectSuccess('delete-notion-page.js', ['--json', 'page-id'], '"archived": true', {
+expectSuccess('delete-notion-page.js', ['--json', '--confirm-archive', 'page-id'], '"archived": true', {
   NODE_OPTIONS: `--require ${mockNotionApi}`,
 });
 

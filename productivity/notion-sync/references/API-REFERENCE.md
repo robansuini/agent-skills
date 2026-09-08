@@ -211,10 +211,12 @@ Archive page (soft delete).
 
 **Signature:**
 ```bash
-node scripts/delete-notion-page.js <page-id> [--json]
+node scripts/delete-notion-page.js <page-id> --confirm-archive [--json]
 ```
 
-**Note:** Sets `archived: true`, doesn't permanently delete
+**Note:** Sets `archived: true`, doesn't permanently delete. The
+`--confirm-archive` flag is mandatory so incomplete or inferred commands fail
+before any API request.
 
 ## Notion API Utilities
 
