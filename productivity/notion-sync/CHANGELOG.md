@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.0.1 — 2026-09-08
+
+### Security
+
+- Declares environment, outbound-network, and local file capabilities in the
+  AgentSkill manifest, including `NOTION_API_KEY` and `api.notion.com`.
+- Expands the discovery description to disclose read, create, update, schema,
+  batch-edit, and archive operations before invocation.
+- Requires `--confirm-archive` before a page can be archived.
+
 ## 3.0.0 — 2026-09-08
 
 ### Breaking
