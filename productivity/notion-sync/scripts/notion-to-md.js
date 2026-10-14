@@ -43,8 +43,19 @@ async function main() {
     process.exit(isHelp ? 0 : 1);
   }
 
-  const pageId = normalizeId(args[0]);
-  const outputFile = args[1] || null;
+  const unknownOption = args.find(arg => arg.startsWith('-'));
+  const invalidArgument = unknownOption || args[2];
+  if (invalidArgument) {
+    const message = unknownOption
+      ? `Unknown option: ${unknownOption}`
+      : `Unexpected argument: ${invalidArgument}`;
+    if (hasJsonFlag()) console.log(JSON.stringify({ error: message }, null, 2));
+    else log(`Error: ${message}`);
+    process.exit(1);
+  }
+
+  const [pageIdArg, outputFile = null] = args;
+  const pageId = normalizeId(pageIdArg);
 
   let safeOutputFile = null;
   if (outputFile) {
