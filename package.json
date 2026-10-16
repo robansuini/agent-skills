@@ -1,0 +1,11 @@
+{
+  "name": "agent-skills",
+  "private": true,
+  "description": "Agent Skills collection for notion-sync and leadership-prompts",
+  "scripts": {
+    "test": "node tests/run-all.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
