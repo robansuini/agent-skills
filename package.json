@@ -3,8 +3,12 @@
   "private": true,
   "description": "Agent Skills collection for notion-sync and leadership-prompts",
   "scripts": {
+<<<<<<< HEAD
     "test": "node tests/run-all.js",
     "lint:agent": "node tests/lint/check-agent-contracts.js"
+=======
+    "test": "node tests/run-all.js"
+>>>>>>> origin/main
   },
   "engines": {
     "node": ">=18"
