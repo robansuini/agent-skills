@@ -184,18 +184,12 @@ requires OpenClaw 2026.9.1+ and Node.js 22.21+ (22.x), 24.5+ (24.x), or 25+.
 From repository root, run the full local test suite:
 
 ```bash
-node tests/run-all.js
+npm test
 ```
 
-Or run individual suites:
-
-```bash
-node tests/leadership-prompts/test-cli.js
-node tests/notion-sync/test-normalize.js
-node tests/notion-sync/test-query-database-args.js
-node tests/notion-sync/test-search-notion-args.js
-node tests/notion-sync/test-update-page-properties-args.js
-```
+The aggregate runner automatically discovers every `tests/**/test-*.js` file,
+so new suites do not need to be registered in this README. Run a specific test
+file directly with `node path/to/test-file.js` when iterating locally.
 
 ## Contributing
 
