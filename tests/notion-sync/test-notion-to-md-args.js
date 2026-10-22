@@ -1,46 +1,13 @@
 #!/usr/bin/env node
 
-const assert = require('assert');
-const path = require('path');
-const { spawnSync } = require('child_process');
+const { createCliHarness } = require('./cli-harness');
 
-const repoRoot = path.resolve(__dirname, '../..');
-const scriptPath = path.join(repoRoot, 'productivity/notion-sync/scripts/notion-to-md.js');
+const { expectFailure, expectSuccess } = createCliHarness('notion-to-md.js', {
+  forbiddenFailureOutput: ['Could not reach Notion API', 'at main'],
+});
 
-function run(args) {
-  return spawnSync(process.execPath, [scriptPath, ...args], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    env: {
-      ...process.env,
-      NOTION_API_KEY: 'ntn_dummy_token_for_tests',
-    },
-  });
-}
-
-function expectFailure(args, expectedSubstring) {
-  const result = run(args);
-  const output = (result.stdout || '') + (result.stderr || '');
-
-  assert.notStrictEqual(result.status, 0, `Expected non-zero exit for: ${args.join(' ')}`);
-  assert(
-    output.includes(expectedSubstring),
-    `Expected output to include "${expectedSubstring}". Got:\n${output}`
-  );
-  assert(!output.includes('Could not reach Notion API'), 'Should fail before making a Notion API request');
-  assert(!output.includes('at main'), 'Should not print a raw stack trace');
-}
-
-function expectHelp(args) {
-  const result = run(args);
-  const output = (result.stdout || '') + (result.stderr || '');
-
-  assert.strictEqual(result.status, 0, `Expected zero exit for: ${args.join(' ')}. Got:\n${output}`);
-  assert(output.includes('Usage: notion-to-md.js'), `Expected usage output. Got:\n${output}`);
-}
-
-expectHelp(['--help']);
-expectHelp(['page-id', 'output.md', '-h']);
+expectSuccess(['--help'], 'Usage: notion-to-md.js');
+expectSuccess(['page-id', 'output.md', '-h'], 'Usage: notion-to-md.js');
 expectFailure([], 'Usage: notion-to-md.js');
 expectFailure(['page-id', '--dry-run'], 'Unknown option: --dry-run');
 expectFailure(['page-id', 'output.md', 'extra'], 'Unexpected argument: extra');
