@@ -1,54 +1,10 @@
 #!/usr/bin/env node
 
-const assert = require('assert');
-const path = require('path');
-const { spawnSync } = require('child_process');
+const { createCliHarness } = require('./cli-harness');
 
-const repoRoot = path.resolve(__dirname, '../..');
-const scriptPath = path.join(repoRoot, 'productivity/notion-sync/scripts/search-notion.js');
-
-function run(args) {
-  return spawnSync('node', [scriptPath, ...args], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    env: {
-      ...process.env,
-      NOTION_API_KEY: 'ntn_dummy_token_for_tests',
-    },
-  });
-}
-
-function expectFailure(args, expectedSubstring) {
-  const result = run(args);
-  const output = (result.stdout || '') + (result.stderr || '');
-
-  assert.notStrictEqual(result.status, 0, `Expected non-zero exit for: ${args.join(' ')}`);
-  assert(
-    output.includes(expectedSubstring),
-    `Expected output to include "${expectedSubstring}". Got:\n${output}`
-  );
-
-  assert(!output.includes('SyntaxError:'), 'Should not print a raw SyntaxError stack trace');
-  assert(!output.includes('at main'), 'Should not print a raw stack trace');
-}
-
-function expectSuccess(args, expectedSubstring, forbiddenSubstring = null) {
-  const result = run(args);
-  const output = (result.stdout || '') + (result.stderr || '');
-
-  assert.strictEqual(result.status, 0, `Expected zero exit for: ${args.join(' ')}. Got:\n${output}`);
-  assert(
-    output.includes(expectedSubstring),
-    `Expected output to include "${expectedSubstring}". Got:\n${output}`
-  );
-
-  if (forbiddenSubstring) {
-    assert(
-      !output.includes(forbiddenSubstring),
-      `Expected output not to include "${forbiddenSubstring}". Got:\n${output}`
-    );
-  }
-}
+const { expectFailure, expectSuccess } = createCliHarness('search-notion.js', {
+  forbiddenFailureOutput: ['SyntaxError:', 'at main'],
+});
 
 expectSuccess(['-h'], 'Usage: search-notion.js', 'Searching for:');
 expectFailure(['query', '--filter'], '--filter requires page or database');
