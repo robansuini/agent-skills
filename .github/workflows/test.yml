@@ -13,7 +13,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Agent contract lint
-        run: node tests/lint/check-agent-contracts.js
-      - name: Test suite
-        run: node tests/run-all.js
+      - name: Validate
+        run: npm test
