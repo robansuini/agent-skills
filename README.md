@@ -181,15 +181,16 @@ requires OpenClaw 2026.9.1+ and Node.js 22.21+ (22.x), 24.5+ (24.x), or 25+.
 
 ## Running Tests
 
-From repository root, run the full local test suite:
+From repository root, run the full local validation suite:
 
 ```bash
 npm test
 ```
 
-The aggregate runner automatically discovers every `tests/**/test-*.js` file,
-so new suites do not need to be registered in this README. Run a specific test
-file directly with `node path/to/test-file.js` when iterating locally.
+This runs the agent contract lint, then automatically discovers and executes
+every `tests/**/test-*.js` file. New suites do not need to be registered in this
+README. Run a specific test file directly with `node path/to/test-file.js` when
+iterating locally.
 
 ## Contributing
 
